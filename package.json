@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "worker": "tsx --env-file=.env.local worker/index.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
