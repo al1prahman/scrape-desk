@@ -1,0 +1,21 @@
+@import "tailwindcss";
+@import "../design-system/tokens.css";
+
+@theme inline {
+  --color-canvas: var(--ds-color-canvas);
+  --color-surface: var(--ds-color-surface);
+  --color-ink: var(--ds-color-ink);
+  --color-muted: var(--ds-color-muted);
+  --color-subtle: var(--ds-color-subtle);
+  --color-line: var(--ds-color-line);
+  --color-accent: var(--ds-color-accent);
+  --font-sans: var(--ds-font-sans);
+  --font-mono: var(--ds-font-mono);
+  --radius-card: var(--ds-radius-card);
+}
+
+body {
+  background-color: var(--ds-color-canvas);
+  color: var(--ds-color-ink);
+  font-family: var(--ds-font-sans);
+}

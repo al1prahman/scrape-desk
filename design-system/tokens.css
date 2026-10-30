@@ -1,0 +1,15 @@
+:root {
+  --ds-color-canvas: #0f0e0c;
+  --ds-color-surface: #171512;
+  --ds-color-ink: #f2ede4;
+  --ds-color-muted: #a39d92;
+  --ds-color-subtle: #837d73;
+  --ds-color-line: #2a2723;
+  --ds-color-accent: #e8e1d3;
+
+  --ds-font-sans: var(--font-geist-sans);
+  --ds-font-mono: var(--font-geist-mono);
+
+  --ds-radius-card: 12px;
+  --ds-radius-pill: 999px;
+}
