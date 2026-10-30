@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Run } from "@/lib/runs/types";
@@ -64,9 +65,16 @@ export function RunMonitor({ jobId, initialRuns }: { jobId: string; initialRuns:
             <span className="text-xs text-subtle">
               {new Date(run.queued_at).toLocaleString("id-ID")}
             </span>
+            {run.status === "done" ? (
+              <Link
+                href={`/dashboard/jobs/${jobId}/runs/${run.id}`}
+                className="text-xs text-ink underline"
+              >
+                {run.row_count} rows
+              </Link>
+            ) : null}
           </div>
           <div className="text-xs text-muted">
-            {run.status === "done" ? `${run.row_count} rows` : null}
             {run.status === "failed" ? run.error : null}
           </div>
         </li>
