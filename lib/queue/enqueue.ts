@@ -14,7 +14,12 @@ export async function enqueueScrape(data: ScrapeJobData): Promise<void> {
   const boss = new PgBoss(env.DATABASE_URL);
   await boss.start();
   try {
-    await boss.send(SCRAPE_QUEUE, data);
+    // pg-boss v10 join send ke tabel queue, queue yang belum ada bikin insert gagal senyap.
+    await boss.createQueue(SCRAPE_QUEUE);
+    const jobId = await boss.send(SCRAPE_QUEUE, data);
+    if (!jobId) {
+      throw new Error(`Enqueue gagal untuk queue ${SCRAPE_QUEUE}`);
+    }
   } finally {
     await boss.stop();
   }

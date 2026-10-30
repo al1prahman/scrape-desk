@@ -7,6 +7,7 @@ async function main() {
   boss.on("error", (error) => console.error("[pg-boss]", error));
 
   await boss.start();
+  await boss.createQueue(SCRAPE_QUEUE);
   await boss.work(SCRAPE_QUEUE, handleScrapeJob);
 
   console.log(`[worker] listening on queue ${SCRAPE_QUEUE}`);
