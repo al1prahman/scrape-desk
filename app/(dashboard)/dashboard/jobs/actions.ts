@@ -8,6 +8,8 @@ import {
   parseJobFormData,
 } from "@/lib/validation/jobs";
 import { createJob, updateJob, deleteJob } from "@/lib/jobs/repository";
+import { createRun } from "@/lib/runs/repository";
+import { enqueueScrape } from "@/lib/queue/enqueue";
 import type { Job } from "@/lib/jobs/types";
 
 export type JobActionState = { error: string };
@@ -56,4 +58,10 @@ export async function deleteJobAction(id: string): Promise<void> {
   await deleteJob(id);
   revalidatePath("/dashboard/jobs");
   redirect("/dashboard/jobs");
+}
+
+export async function triggerRunAction(jobId: string): Promise<void> {
+  const run = await createRun(jobId, "manual");
+  await enqueueScrape({ runId: run.id, jobId });
+  revalidatePath(`/dashboard/jobs/${jobId}`);
 }

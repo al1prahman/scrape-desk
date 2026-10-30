@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import { getJob } from "@/lib/jobs/repository";
+import { listRuns } from "@/lib/runs/repository";
+import { buttonClass } from "@/components/ui/button";
 import { JobForm } from "../job-form";
-import { updateJobAction, deleteJobAction } from "../actions";
+import { RunMonitor } from "./run-monitor";
+import { updateJobAction, deleteJobAction, triggerRunAction } from "../actions";
 
 export default async function JobDetailPage({
   params,
@@ -13,12 +16,27 @@ export default async function JobDetailPage({
 
   if (!job) notFound();
 
+  const runs = await listRuns(id);
+
   return (
     <div className="max-w-xl space-y-10">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">{job.name}</h1>
         <p className="mt-1 text-sm text-muted">{job.target_url}</p>
       </div>
+      <section>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">Run history</h2>
+          <form action={triggerRunAction.bind(null, job.id)}>
+            <button type="submit" className={buttonClass("primary")}>
+              Run Now
+            </button>
+          </form>
+        </div>
+        <div className="mt-4">
+          <RunMonitor jobId={job.id} initialRuns={runs} />
+        </div>
+      </section>
       <section>
         <h2 className="text-lg font-medium">Edit job</h2>
         <JobForm
