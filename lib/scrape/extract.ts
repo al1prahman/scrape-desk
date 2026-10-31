@@ -1,9 +1,9 @@
 import * as cheerio from "cheerio";
-import type { ExtractConfig, ScrapedRow } from "./types";
+import type { CssExtractConfig, ScrapedRow } from "./types";
 
 // Strategi MVP: tiap selector dikumpulkan sebagai kolom, baris disusun per index.
 // Cocok untuk halaman listing di mana tiap field muncul urut dan sama banyak.
-export function extractRows(html: string, config: ExtractConfig): ScrapedRow[] {
+export function extractRows(html: string, config: CssExtractConfig): ScrapedRow[] {
   const $ = cheerio.load(html);
 
   const columns = config.fields.map((field) => ({
