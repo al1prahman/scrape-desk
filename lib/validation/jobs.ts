@@ -46,7 +46,8 @@ const cssConfigSchema = z.object({
         selector: z.string().min(1, "Selector wajib diisi").max(500),
       }),
     )
-    .min(1, "Minimal satu field ekstraksi"),
+    .min(1, "Minimal satu field ekstraksi")
+    .max(50, "Maksimal 50 field ekstraksi"),
   limit: z.number().int().positive().max(10000).optional(),
   navigation: navigationSchema.optional(),
   cookies: z.array(cookieSchema).max(50).optional(),
@@ -65,7 +66,8 @@ const aiConfigSchema = z.object({
         description: z.string().min(1, "Deskripsi field wajib diisi").max(500),
       }),
     )
-    .min(1, "Minimal satu field di schema"),
+    .min(1, "Minimal satu field di schema")
+    .max(50, "Maksimal 50 field di schema"),
   limit: z.number().int().positive().max(10000).optional(),
   navigation: navigationSchema.optional(),
   cookies: z.array(cookieSchema).max(50).optional(),
