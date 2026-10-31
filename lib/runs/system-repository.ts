@@ -11,6 +11,18 @@ export async function getJobForSystem(jobId: string): Promise<Job | null> {
   return data as Job;
 }
 
+export async function createRunForJob(jobId: string): Promise<Run> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("job_runs")
+    .insert({ job_id: jobId, trigger: "schedule" })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as Run;
+}
+
 export async function markRunRunning(runId: string): Promise<void> {
   const supabase = createAdminClient();
   const { error } = await supabase

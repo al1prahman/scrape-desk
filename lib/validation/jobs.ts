@@ -28,6 +28,15 @@ const cookieSchema = z.object({
   value: z.string().max(4000),
 });
 
+const scheduleSchema = z.object({
+  cron: z
+    .string()
+    .min(9)
+    .refine((value) => value.trim().split(/\s+/).length === 5, "Cron harus 5 field: menit jam hari bulan hari-dalam-minggu"),
+});
+
+const proxySchema = z.string().url().max(500);
+
 const cssConfigSchema = z.object({
   mode: z.literal("css"),
   fields: z
@@ -41,6 +50,9 @@ const cssConfigSchema = z.object({
   limit: z.number().int().positive().max(10000).optional(),
   navigation: navigationSchema.optional(),
   cookies: z.array(cookieSchema).max(50).optional(),
+  proxies: z.array(proxySchema).max(20).optional(),
+  schedule: scheduleSchema.optional(),
+  webhookUrl: z.string().url().max(500).optional(),
 });
 
 const aiConfigSchema = z.object({
@@ -57,6 +69,9 @@ const aiConfigSchema = z.object({
   limit: z.number().int().positive().max(10000).optional(),
   navigation: navigationSchema.optional(),
   cookies: z.array(cookieSchema).max(50).optional(),
+  proxies: z.array(proxySchema).max(20).optional(),
+  schedule: scheduleSchema.optional(),
+  webhookUrl: z.string().url().max(500).optional(),
 });
 
 export const extractConfigSchema = z.discriminatedUnion("mode", [cssConfigSchema, aiConfigSchema]);

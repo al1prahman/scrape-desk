@@ -22,12 +22,19 @@ export type NavigationConfig = {
   infiniteScroll?: { maxScrolls: number };
 };
 
+export type ScheduleConfig = {
+  cron: string;
+};
+
 export type CssExtractConfig = {
   mode: "css";
   fields: ExtractField[];
   limit?: number;
   navigation?: NavigationConfig;
   cookies?: Cookie[];
+  proxies?: string[];
+  schedule?: ScheduleConfig;
+  webhookUrl?: string;
 };
 
 export type AiExtractConfig = {
@@ -37,6 +44,9 @@ export type AiExtractConfig = {
   limit?: number;
   navigation?: NavigationConfig;
   cookies?: Cookie[];
+  proxies?: string[];
+  schedule?: ScheduleConfig;
+  webhookUrl?: string;
 };
 
 export type ExtractConfig = CssExtractConfig | AiExtractConfig;

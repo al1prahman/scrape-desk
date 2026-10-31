@@ -56,62 +56,74 @@ async function scrollToBottom(page: Page, maxScrolls: number): Promise<void> {
 async function collectPageHtmls(url: string, config: ExtractConfig): Promise<string[]> {
   const browser = await launchBrowser();
   try {
-    const context = await browser.newContext();
-
-    if (config.cookies?.length) {
-      await context.addCookies(
-        config.cookies.map((cookie) => ({
-          name: cookie.name,
-          value: cookie.value,
-          url,
-        })),
-      );
-    }
-
-    await applyStealth(context);
-    const page = await context.newPage();
-
     const htmls: string[] = [];
     const pagination = config.navigation?.pagination;
     const maxPages = pagination?.maxPages ?? 1;
     const waitSelector = config.mode === "css" ? config.fields[0]?.selector : undefined;
+    const proxies = config.proxies ?? [];
 
     let currentUrl = url;
 
     for (let pageNumber = 1; pageNumber <= maxPages; pageNumber++) {
-      await page.goto(currentUrl, {
-        waitUntil: config.mode === "ai" ? "load" : "domcontentloaded",
-        timeout: NAV_TIMEOUT_MS,
-      });
+      // Proxy dirotasi round-robin per halaman. Nggak ada proxy berarti koneksi langsung.
+      const proxy = proxies.length > 0 ? proxies[(pageNumber - 1) % proxies.length] : undefined;
+      const context = await browser.newContext(proxy ? { proxy: { server: proxy } } : {});
 
-      if (waitSelector) {
-        await page
-          .waitForSelector(waitSelector, { timeout: SELECTOR_TIMEOUT_MS })
-          .catch(() => null);
+      let nextUrl: string | null = null;
+
+      try {
+        if (config.cookies?.length) {
+          await context.addCookies(
+            config.cookies.map((cookie) => ({
+              name: cookie.name,
+              value: cookie.value,
+              url: currentUrl,
+            })),
+          );
+        }
+
+        await applyStealth(context);
+        const page = await context.newPage();
+
+        await page.goto(currentUrl, {
+          waitUntil: config.mode === "ai" ? "load" : "domcontentloaded",
+          timeout: NAV_TIMEOUT_MS,
+        });
+
+        if (waitSelector) {
+          await page
+            .waitForSelector(waitSelector, { timeout: SELECTOR_TIMEOUT_MS })
+            .catch(() => null);
+        }
+
+        if (config.mode === "ai") {
+          await page.waitForTimeout(AI_SETTLE_MS);
+        }
+
+        if (config.navigation?.infiniteScroll) {
+          await scrollToBottom(page, config.navigation.infiniteScroll.maxScrolls);
+        }
+
+        htmls.push(await page.content());
+
+        if (pagination && pageNumber < maxPages) {
+          if (pagination.mode === "next-selector") {
+            const nextButton = await page.$(pagination.nextSelector);
+            if (nextButton) {
+              await nextButton.click();
+              await page.waitForLoadState("domcontentloaded").catch(() => null);
+              nextUrl = page.url();
+            }
+          } else {
+            nextUrl = pagination.urlPattern.replace("{page}", String(pageNumber + 1));
+          }
+        }
+      } finally {
+        await context.close();
       }
 
-      if (config.mode === "ai") {
-        await page.waitForTimeout(AI_SETTLE_MS);
-      }
-
-      if (config.navigation?.infiniteScroll) {
-        await scrollToBottom(page, config.navigation.infiniteScroll.maxScrolls);
-      }
-
-      htmls.push(await page.content());
-
-      if (!pagination || pageNumber === maxPages) break;
-
-      if (pagination.mode === "next-selector") {
-        const nextButton = await page.$(pagination.nextSelector);
-        if (!nextButton) break;
-
-        await nextButton.click();
-        await page.waitForLoadState("domcontentloaded").catch(() => null);
-        currentUrl = page.url();
-      } else {
-        currentUrl = pagination.urlPattern.replace("{page}", String(pageNumber + 1));
-      }
+      if (!nextUrl) break;
+      currentUrl = nextUrl;
     }
 
     return htmls;

@@ -10,6 +10,7 @@ import {
 import { createJob, updateJob, deleteJob } from "@/lib/jobs/repository";
 import { createRun } from "@/lib/runs/repository";
 import { enqueueScrape } from "@/lib/queue/enqueue";
+import { registerJobSchedule, unregisterJobSchedule } from "@/lib/queue/schedule";
 import type { Job } from "@/lib/jobs/types";
 
 export type JobActionState = { error: string };
@@ -30,6 +31,16 @@ export async function createJobAction(
     return { error: error instanceof Error ? error.message : "Gagal membuat job" };
   }
 
+  if (job.config.schedule) {
+    try {
+      await registerJobSchedule(job.id, job.config.schedule.cron);
+    } catch (error) {
+      return {
+        error: `Job dibuat tapi schedule gagal: ${error instanceof Error ? error.message : "unknown"}`,
+      };
+    }
+  }
+
   revalidatePath("/dashboard/jobs");
   redirect(`/dashboard/jobs/${job.id}`);
 }
@@ -45,7 +56,13 @@ export async function updateJobAction(
   }
 
   try {
-    await updateJob(id, parsed.data);
+    const job = await updateJob(id, parsed.data);
+
+    // Schedule di-reset dulu terus didaftarin ulang kalau masih ada.
+    await unregisterJobSchedule(id);
+    if (job.config.schedule) {
+      await registerJobSchedule(id, job.config.schedule.cron);
+    }
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal menyimpan perubahan" };
   }
@@ -55,6 +72,7 @@ export async function updateJobAction(
 }
 
 export async function deleteJobAction(id: string): Promise<void> {
+  await unregisterJobSchedule(id);
   await deleteJob(id);
   revalidatePath("/dashboard/jobs");
   redirect("/dashboard/jobs");

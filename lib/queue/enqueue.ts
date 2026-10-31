@@ -4,8 +4,8 @@ import { env } from "@/lib/env";
 export const SCRAPE_QUEUE = "scrape";
 
 export type ScrapeJobData = {
-  runId: string;
   jobId: string;
+  runId?: string;
 };
 
 // Instance short-lived, aman dipanggil dari server action atau environment serverless.

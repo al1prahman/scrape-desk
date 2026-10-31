@@ -89,6 +89,11 @@ export function JobForm({ action, submitLabel, initialValues }: JobFormProps) {
   const [cookiesText, setCookiesText] = useState(
     initialConfig?.cookies?.map((cookie) => `${cookie.name}=${cookie.value}`).join("\n") ?? "",
   );
+  const [proxiesText, setProxiesText] = useState(
+    initialConfig?.proxies?.join("\n") ?? "",
+  );
+  const [cron, setCron] = useState(initialConfig?.schedule?.cron ?? "");
+  const [webhookUrl, setWebhookUrl] = useState(initialConfig?.webhookUrl ?? "");
 
   const [state, formAction, pending] = useActionState(action, { error: "" });
 
@@ -113,6 +118,12 @@ export function JobForm({ action, submitLabel, initialValues }: JobFormProps) {
   function buildConfig(): ExtractConfig {
     const navigation = buildNavigation();
     const cookies = parseCookies(cookiesText);
+    const proxies = proxiesText
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+    const trimmedCron = cron.trim();
+    const trimmedWebhook = webhookUrl.trim();
 
     const base =
       mode === "css"
@@ -123,6 +134,9 @@ export function JobForm({ action, submitLabel, initialValues }: JobFormProps) {
       ...base,
       ...(navigation ? { navigation } : {}),
       ...(cookies.length > 0 ? { cookies } : {}),
+      ...(proxies.length > 0 ? { proxies } : {}),
+      ...(trimmedCron ? { schedule: { cron: trimmedCron } } : {}),
+      ...(trimmedWebhook ? { webhookUrl: trimmedWebhook } : {}),
     };
   }
 
@@ -416,6 +430,52 @@ export function JobForm({ action, submitLabel, initialValues }: JobFormProps) {
           className={inputClass}
           placeholder={"session=abc123\ncsrf=xyz789"}
         />
+      </div>
+
+      <div>
+        <label htmlFor="proxies" className="block text-sm text-muted">
+          Proxies, satu per baris format http://user:pass@ip:port, dirotasi per halaman, opsional
+        </label>
+        <textarea
+          id="proxies"
+          value={proxiesText}
+          onChange={(event) => setProxiesText(event.target.value)}
+          rows={3}
+          className={inputClass}
+          placeholder={"http://user:pass@1.2.3.4:8080\nhttp://user:pass@5.6.7.8:8080"}
+        />
+      </div>
+
+      <div className="space-y-4 rounded-card border border-line p-4">
+        <span className="block text-sm font-medium">Otomasi</span>
+
+        <div>
+          <label htmlFor="cron" className="block text-xs text-muted">
+            Schedule cron, kosongin kalau mau manual doang. Format 5 field: menit jam hari bulan
+            hari-dalam-minggu
+          </label>
+          <input
+            id="cron"
+            value={cron}
+            onChange={(event) => setCron(event.target.value)}
+            className={inputClass}
+            placeholder="0 9 * * * (tiap hari jam 9 pagi)"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="webhookUrl" className="block text-xs text-muted">
+            Webhook URL, dikirimi notifikasi JSON pas run selesai, opsional
+          </label>
+          <input
+            id="webhookUrl"
+            type="url"
+            value={webhookUrl}
+            onChange={(event) => setWebhookUrl(event.target.value)}
+            className={inputClass}
+            placeholder="https://domain-lo.com/webhook"
+          />
+        </div>
       </div>
 
       <input type="hidden" name="configJson" value={JSON.stringify(buildConfig())} />
