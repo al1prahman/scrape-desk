@@ -1,13 +1,18 @@
 # ScrapeDesk
 
-Scraping-as-a-service platform. Define a target URL and extraction fields, trigger a run, and receive structured data you can view in the dashboard, export as CSV/JSON, or pull through the public API with an API key.
+Scraping-as-a-service platform with a multi-source data pipeline. Define a target and extraction rules, trigger a run, and receive structured data you can view in the dashboard, export as CSV/JSON, or pull through the public API with an API key.
 
 This is not a personal scraping script: it has multi-user support, job management, run history, API access, and per-user data isolation via Row Level Security.
 
 ## Features
 
-- **Two extraction modes**
-  - CSS selector mode: define field-to-selector mappings, rows assembled by index
+- **Four source types in one pipeline**
+  - Web page: render HTML with Playwright, extract with CSS selectors or an LLM
+  - JSON API: fetch JSON, map fields with dot paths, paginate by page number, cursor, or next link
+  - RSS/Atom feed: parse any feed into title, link, date, summary rows
+  - Sitemap crawl: discover URLs from sitemap.xml (including sitemap indexes), then scrape each page
+- **Extraction modes**
+  - CSS selector mode: field-to-selector mappings, rows assembled by index
   - Container mode: define a container selector plus relative field selectors, one row per container element, no field bleed between rows
   - AI extraction mode: natural language instructions plus a field schema, powered by any OpenAI-compatible LLM endpoint (local or hosted)
 - **Smart navigation**
@@ -88,29 +93,38 @@ Full documentation lives on the `/docs` page.
 ```json
 {
   "config": {
+    "sourceType": "api",
     "mode": "css",
-    "fields": [{ "name": "title", "selector": "h2.title" }],
-    "navigation": {
+    "fields": [
+      { "name": "title", "selector": "title" },
+      { "name": "cited", "selector": "cited_by_count" }
+    ],
+    "api": {
+      "itemsPath": "results",
+      "headers": { "Authorization": "Bearer xxx" },
       "pagination": {
-        "mode": "url-pattern",
-        "urlPattern": "https://example.com/listing?page={page}",
-        "maxPages": 5
-      },
-      "infiniteScroll": { "maxScrolls": 10 }
-    },
-    "cookies": [{ "name": "session", "value": "xxx" }],
-    "proxies": ["http://user:pass@1.2.3.4:8080"],
-    "schedule": { "cron": "0 9 * * *" },
-    "webhookUrl": "https://your-domain.com/webhook"
+        "type": "page",
+        "pageParam": "page",
+        "maxPages": 5,
+        "sizeParam": "per-page",
+        "pageSize": 25
+      }
+    }
   }
 }
 ```
+
+`sourceType` selects the source: `web` (default), `api`, `feed`, or `sitemap`. In API mode, field selectors are dot paths into the JSON response (supports array indexes like `authors[0].name`). In feed mode, no extraction config is needed; rows are title, link, date, summary. In sitemap mode, `sitemap.urlFilter` and `sitemap.maxUrls` control which discovered URLs get scraped, and the normal extraction config applies to each page.
 
 For AI mode, replace `fields` with `instruction` (natural language) and `schema` (field name + description pairs). All navigation, access, and automation options work in both modes.
 
 In CSS mode, `containerSelector` is optional. When set, each matching element becomes one row and field selectors are resolved relative to it. When empty, fields are collected as columns and rows are assembled by index.
 
 ## Engineering Notes
+
+### Multi-source architecture
+
+`scrapeJob` dispatches on `sourceType`: web renders HTML through Playwright (the default, fully backward compatible), api fetches JSON with dot-path field mapping and three pagination strategies, feed parses RSS/Atom into fixed columns, and sitemap discovers URLs then runs the web extraction per page. One pipeline, four input shapes, one output shape.
 
 ### pg-boss v10: queues must be created explicitly
 
@@ -161,12 +175,16 @@ The stealth init script raises the minimum headless-detection bar (webdriver fla
 
 End-to-end verified against live targets:
 
-- CSS mode: 20 rows from books.toscrape.com
-- Container mode: 20 rows with per-container field scoping, verified no field bleed (all prices match the £ format, titles match real books)
-- AI mode: 3 rows (title/price/stock) through an OpenAI-compatible endpoint
-- Pagination: 60 rows across 3 pages, first row from page 1, last row from page 3
-- Infinite scroll: 100 quotes from quotes.toscrape.com/scroll
-- Cookie injection: verified via httpbin echo of injected cookies
+- Web CSS mode: 20 rows from books.toscrape.com
+- Web container mode: 20 rows with per-container field scoping, verified no field bleed (all prices match the £ format, titles match real books)
+- Web AI mode: 3 rows (title/price/stock) through an OpenAI-compatible endpoint
+- Web pagination: 60 rows across 3 pages, first row from page 1, last row from page 3
+- Web infinite scroll: 100 quotes from quotes.toscrape.com/scroll
+- Web cookie injection: verified via httpbin echo of injected cookies
+- API source: 5 journal papers from OpenAlex with title, year, citation count
+- API pagination: 6 rows across 2 pages via page-number pagination
+- Feed source: 10 news items from BBC RSS with title, link, date
+- Sitemap source: 3 RFC pages discovered through a sitemap index with child recursion
 - Webhook: payload received with correct event, jobId, status, and rowCount
 - Schedule: cron fires, creates the run row, scrapes 20 rows, reschedules the next run, and stops cleanly when the schedule is removed
 - Proxy rotation: verified plumbing via forced `ERR_PROXY_CONNECTION_FAILED` on a dead proxy

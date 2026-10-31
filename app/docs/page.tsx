@@ -156,6 +156,16 @@ curl https://domain-lo.com/api/v1/jobs/JOB_ID/results \\
       </section>
 
       <section className="mt-12">
+        <h2 className="text-lg font-medium">Sumber data</h2>
+        <p className="mt-2 text-sm text-muted">
+          Config job punya sourceType: web (default), api, feed, dan sitemap. Mode api fetch JSON
+          dan memetakan field lewat dot path, mendukung paginasi page number, cursor, dan next
+          link. Mode feed parse RSS atau Atom jadi kolom title, link, date, summary. Mode sitemap
+          ambil URL dari sitemap.xml termasuk sitemap index, lalu scraping tiap halaman.
+        </p>
+      </section>
+
+      <section className="mt-12">
         <h2 className="text-lg font-medium">Container mode</h2>
         <p className="mt-2 text-sm text-muted">
           Di mode css, containerSelector opsional. Kalau diisi, tiap elemen yang match jadi satu
