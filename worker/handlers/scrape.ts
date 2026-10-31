@@ -23,6 +23,12 @@ async function processScrape(data: ScrapeJobData) {
     return;
   }
 
+  // Run terjadwal yang datang setelah schedule dihapus: berhenti total,
+  // nggak bikin run row dan nggak scraping.
+  if (data.scheduled && !jobRow.config.schedule) {
+    return;
+  }
+
   // Run dari scheduler nggak bawa runId, jadi dibuat di sini.
   const runId = data.runId ?? (await createRunForJob(jobId)).id;
 
