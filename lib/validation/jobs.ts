@@ -1,5 +1,33 @@
 import { z } from "zod";
 
+const paginationSchema = z.discriminatedUnion("mode", [
+  z.object({
+    mode: z.literal("next-selector"),
+    nextSelector: z.string().min(1, "Selector tombol next wajib diisi").max(500),
+    maxPages: z.number().int().min(2).max(50),
+  }),
+  z.object({
+    mode: z.literal("url-pattern"),
+    urlPattern: z
+      .string()
+      .min(1)
+      .refine((value) => value.includes("{page}"), "Pattern harus mengandung {page}"),
+    maxPages: z.number().int().min(2).max(50),
+  }),
+]);
+
+const navigationSchema = z.object({
+  pagination: paginationSchema.optional(),
+  infiniteScroll: z
+    .object({ maxScrolls: z.number().int().min(1).max(50) })
+    .optional(),
+});
+
+const cookieSchema = z.object({
+  name: z.string().min(1).max(200),
+  value: z.string().max(4000),
+});
+
 const cssConfigSchema = z.object({
   mode: z.literal("css"),
   fields: z
@@ -11,6 +39,8 @@ const cssConfigSchema = z.object({
     )
     .min(1, "Minimal satu field ekstraksi"),
   limit: z.number().int().positive().max(10000).optional(),
+  navigation: navigationSchema.optional(),
+  cookies: z.array(cookieSchema).max(50).optional(),
 });
 
 const aiConfigSchema = z.object({
@@ -25,6 +55,8 @@ const aiConfigSchema = z.object({
     )
     .min(1, "Minimal satu field di schema"),
   limit: z.number().int().positive().max(10000).optional(),
+  navigation: navigationSchema.optional(),
+  cookies: z.array(cookieSchema).max(50).optional(),
 });
 
 export const extractConfigSchema = z.discriminatedUnion("mode", [cssConfigSchema, aiConfigSchema]);
