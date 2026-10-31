@@ -22,7 +22,12 @@ export default async function JobDetailPage({
     <div className="max-w-xl space-y-10">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">{job.name}</h1>
-        <p className="mt-1 text-sm text-muted">{job.target_url}</p>
+        <p className="mt-1 text-sm text-muted">
+          {job.target_url}{" "}
+          <span className="text-subtle">
+            mode {job.config.mode === "ai" ? "AI extract" : "CSS selector"}
+          </span>
+        </p>
       </div>
       <section>
         <div className="flex items-center justify-between">
@@ -45,7 +50,7 @@ export default async function JobDetailPage({
           initialValues={{
             name: job.name,
             targetUrl: job.target_url,
-            fields: job.config.fields,
+            config: job.config,
           }}
         />
       </section>

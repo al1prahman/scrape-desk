@@ -103,6 +103,29 @@ curl https://domain-lo.com/api/v1/jobs/JOB_ID/results \\
       </section>
 
       <section className="mt-12">
+        <h2 className="text-lg font-medium">Mode ekstraksi</h2>
+        <p className="mt-2 text-sm text-muted">
+          Job punya dua mode. Mode css pakai CSS selector, tepat dan cepat. Mode ai kirim konten
+          halaman ke LLM dan ekstrak sesuai instruksi bahasa manusia, cocok buat halaman yang
+          strukturnya berantapan. Config mode ai dikirim di field config saat create job:
+        </p>
+        <pre className="mt-3 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
+          {`{
+  "name": "Harga kompetitor",
+  "targetUrl": "https://contoh.com/listing",
+  "config": {
+    "mode": "ai",
+    "instruction": "Ambil nama produk dan harga untuk setiap item",
+    "schema": [
+      { "name": "product", "description": "nama produk" },
+      { "name": "price", "description": "harga dalam rupiah" }
+    ]
+  }
+}`}
+        </pre>
+      </section>
+
+      <section className="mt-12">
         <h2 className="text-lg font-medium">Format response</h2>
         <p className="mt-2 text-sm text-muted">
           Sukses dibungkus dalam data, error dalam error dengan code yang bisa diproses

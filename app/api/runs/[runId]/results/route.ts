@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/api/auth";
 import { apiError, apiSuccess } from "@/lib/api/response";
 import { getRunWithJob, getResults } from "@/lib/results/repository";
+import { getColumns } from "@/lib/scrape/columns";
 import { toCsv } from "@/lib/export/csv";
 
 const EXPORT_LIMIT = 10000;
@@ -23,7 +24,7 @@ export async function GET(
   }
 
   const { rows } = await getResults(runId, 1, EXPORT_LIMIT);
-  const columns = runWithJob.job.config.fields.map((field) => field.name);
+  const columns = getColumns(runWithJob.job.config);
 
   if (request.nextUrl.searchParams.get("format") === "csv") {
     return new Response(toCsv(rows, columns), {

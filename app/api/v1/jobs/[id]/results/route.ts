@@ -7,6 +7,7 @@ import {
   getResultsForRun,
 } from "@/lib/jobs/api-repository";
 import { toCsv } from "@/lib/export/csv";
+import { getColumns } from "@/lib/scrape/columns";
 
 export async function GET(
   request: NextRequest,
@@ -30,7 +31,7 @@ export async function GET(
   }
 
   const rows = await getResultsForRun(run.id);
-  const columns = job.config.fields.map((field) => field.name);
+  const columns = getColumns(job.config);
 
   if (request.nextUrl.searchParams.get("format") === "csv") {
     return new Response(toCsv(rows, columns), {

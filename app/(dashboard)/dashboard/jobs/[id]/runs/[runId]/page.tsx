@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getRunWithJob, getResults } from "@/lib/results/repository";
+import { getColumns } from "@/lib/scrape/columns";
 import { ResultsViewer } from "./results-viewer";
 
 const PAGE_SIZE = 50;
@@ -19,7 +20,7 @@ export default async function RunResultsPage({
   if (!runWithJob) notFound();
 
   const results = await getResults(runId, page, PAGE_SIZE);
-  const columns = runWithJob.job.config.fields.map((field) => field.name);
+  const columns = getColumns(runWithJob.job.config);
 
   return (
     <div className="max-w-4xl space-y-6">
