@@ -20,6 +20,9 @@ export function DashboardNav({ email }: { email: string }) {
           <Link href="/dashboard/keys" className={navLinkClass}>
             API Keys
           </Link>
+          <Link href="/docs" target="_blank" className={navLinkClass}>
+            Docs
+          </Link>
         </nav>
         <div className="flex items-center gap-4">
           <span className="hidden text-xs text-subtle sm:block">{email}</span>
