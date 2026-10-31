@@ -50,3 +50,18 @@ export async function getResults(runId: string, page = 1, pageSize = 50): Promis
     total: count ?? 0,
   };
 }
+
+// Semua rows buat keperluan diff, dibatasi sama MAX_DIFF_ROWS di diff.ts.
+export async function getResultsForDiff(runId: string): Promise<ScrapedRow[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("results")
+    .select("data")
+    .eq("run_id", runId)
+    .order("id", { ascending: true })
+    .limit(1000);
+
+  if (error) return [];
+  return (data ?? []).map((row) => row.data as ScrapedRow);
+}

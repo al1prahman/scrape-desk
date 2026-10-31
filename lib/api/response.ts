@@ -5,6 +5,7 @@ export type ApiErrorCode =
   | "UNAUTHORIZED"
   | "NOT_FOUND"
   | "FORBIDDEN"
+  | "QUOTA_EXCEEDED"
   | "INTERNAL_ERROR";
 
 export function apiError(status: number, code: ApiErrorCode, message: string) {

@@ -11,6 +11,8 @@ import { createJob, updateJob, deleteJob } from "@/lib/jobs/repository";
 import { createRun } from "@/lib/runs/repository";
 import { enqueueScrape } from "@/lib/queue/enqueue";
 import { registerJobSchedule } from "@/lib/queue/schedule";
+import { assertQuota } from "@/lib/quota/check";
+import { createClient } from "@/lib/supabase/server";
 import type { Job } from "@/lib/jobs/types";
 
 export type JobActionState = { error: string };
@@ -78,7 +80,16 @@ export async function deleteJobAction(id: string): Promise<void> {
 }
 
 export async function triggerRunAction(jobId: string): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Session habis, login ulang");
+
+  await assertQuota(user.id);
+
   const run = await createRun(jobId, "manual");
   await enqueueScrape({ runId: run.id, jobId });
   revalidatePath(`/dashboard/jobs/${jobId}`);
+  revalidatePath("/dashboard");
 }

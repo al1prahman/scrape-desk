@@ -3,6 +3,7 @@ import { authenticateApiKey } from "@/lib/api/api-key-auth";
 import { apiError, apiSuccess } from "@/lib/api/response";
 import { getJobForUser, createRunForJob } from "@/lib/jobs/api-repository";
 import { enqueueScrape } from "@/lib/queue/enqueue";
+import { assertQuota } from "@/lib/quota/check";
 
 export async function POST(
   request: NextRequest,
@@ -18,6 +19,16 @@ export async function POST(
 
   if (!job) {
     return apiError(404, "NOT_FOUND", "Job tidak ditemukan");
+  }
+
+  try {
+    await assertQuota(userId);
+  } catch (error) {
+    return apiError(
+      429,
+      "QUOTA_EXCEEDED",
+      error instanceof Error ? error.message : "Kuota harian habis",
+    );
   }
 
   try {

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getDashboardStats } from "@/lib/dashboard/repository";
+import { getQuotaStatus } from "@/lib/quota/check";
+import { createClient } from "@/lib/supabase/server";
 import { buttonClass } from "@/components/ui/button";
 
 function StatCard({ label, value }: { label: string; value: number }) {
@@ -14,6 +16,12 @@ function StatCard({ label, value }: { label: string; value: number }) {
 export default async function OverviewPage() {
   const stats = await getDashboardStats();
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const quota = user ? await getQuotaStatus(user.id) : null;
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -27,6 +35,26 @@ export default async function OverviewPage() {
         <StatCard label="Runs" value={stats.runCount} />
         <StatCard label="Rows scraped" value={stats.rowCount} />
       </div>
+      {quota && (
+        <div className="rounded-card border border-line bg-surface p-5">
+          <p className="text-xs uppercase tracking-wider text-subtle">Kuota run hari ini</p>
+          <p className="mt-2 text-2xl font-semibold">
+            {quota.used.toLocaleString("id-ID")}
+            <span className="text-base text-muted"> / {quota.limit.toLocaleString("id-ID")}</span>
+          </p>
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-line">
+            <div
+              className="h-full rounded-full bg-ink"
+              style={{ width: `${Math.min(100, (quota.used / quota.limit) * 100)}%` }}
+            />
+          </div>
+          <p className="mt-2 text-xs text-subtle">
+            {quota.remaining > 0
+              ? `Sisa ${quota.remaining} run hari ini, reset tengah malam UTC.`
+              : "Kuota hari ini habis, reset tengah malam UTC."}
+          </p>
+        </div>
+      )}
       <section>
         <h2 className="text-lg font-medium">Run terbaru</h2>
         {stats.recentRuns.length === 0 ? (
