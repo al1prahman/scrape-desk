@@ -69,15 +69,27 @@ Solusinya: createQueue dipanggil eksplisit sebelum send, dan enqueue melempar er
 
 Project Supabase baru hanya bisa diakses via IPv6 pada direct connection. Development lokal di jaringan IPv4 harus memakai Supavisor pooler session mode (port 5432, user postgres.<project-ref>).
 
+Pooler free tier maksimal 15 koneksi session mode, jadi pool pg-boss dibatasi: max 2 buat worker, max 1 buat enqueue.
+
+### Zombie worker
+
+npm run worker spawn tree npm, tsx, node. Stop via Ctrl+C aman karena SIGINT matiin seluruh grup. Tapi kill paksa ke proses npm doang meninggalkan anak proses hidup sebagai zombie yang tetap konsumsi job queue sambil jalanin kode lama. Kalau hasil scraping ngaco, cek jumlah proses node yang jalan.
+
 ### Strategi ekstraksi MVP
 
 Tiap selector field dikumpulkan sebagai kolom, baris disusun per index. Cocok untuk halaman listing di mana setiap field muncul urut dan sama banyak. Limitasi ini didokumentasikan dan akan ditingkatkan di V2 dengan container-based extraction.
+
+### Navigasi dan akses
+
+- Paginasi dua mode: next-selector (klik tombol next) dan url-pattern (ganti {page} di URL), dibatasi maxPages
+- Infinite scroll: scroll sampai tinggi halaman stabil atau maxScrolls tercapai
+- Cookie injection: kirim cookies dari config buat akses halaman butuh login
+- Stealth: init script buat ngangkat ambang deteksi headless minimum (webdriver flag, chrome runtime, plugins, permissions)
 
 ## Roadmap V2
 
 - Scheduling cron per job
 - Proxy rotation per job
-- Pagination crawling dan link following
 - Webhook notifikasi saat run selesai
 - Quota dan billing
 - Swap engine ke Python Scrapling untuk target susah

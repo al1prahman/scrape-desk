@@ -126,6 +126,36 @@ curl https://domain-lo.com/api/v1/jobs/JOB_ID/results \\
       </section>
 
       <section className="mt-12">
+        <h2 className="text-lg font-medium">Navigasi dan akses</h2>
+        <p className="mt-2 text-sm text-muted">
+          Config job mendukung paginasi, infinite scroll, dan cookie injection:
+        </p>
+        <pre className="mt-3 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
+          {`{
+  "config": {
+    "mode": "css",
+    "fields": [{ "name": "title", "selector": "h2.title" }],
+    "navigation": {
+      "pagination": {
+        "mode": "url-pattern",
+        "urlPattern": "https://contoh.com/listing?page={page}",
+        "maxPages": 5
+      },
+      "infiniteScroll": { "maxScrolls": 10 }
+    },
+    "cookies": [
+      { "name": "session", "value": "xxx" }
+    ]
+  }
+}`}
+        </pre>
+        <p className="mt-3 text-sm text-muted">
+          Paginasi mode next-selector pakai selector tombol next, misal li.next a. Cookie dikirim
+          ke halaman target, berguna buat halaman yang butuh login.
+        </p>
+      </section>
+
+      <section className="mt-12">
         <h2 className="text-lg font-medium">Format response</h2>
         <p className="mt-2 text-sm text-muted">
           Sukses dibungkus dalam data, error dalam error dengan code yang bisa diproses
