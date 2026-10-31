@@ -14,8 +14,18 @@ type FetchOptions = {
   settleMs?: number;
 };
 
+// chrome-headless-shell kadang gagal launch dengan 0xC0000142 (DLL init failed)
+// di Windows. Full chromium lebih stabil, jadi dicoba dulu dengan fallback.
+async function launchBrowser() {
+  try {
+    return await chromium.launch({ channel: "chromium" });
+  } catch {
+    return await chromium.launch();
+  }
+}
+
 async function fetchHtml(url: string, options: FetchOptions = {}): Promise<string> {
-  const browser = await chromium.launch();
+  const browser = await launchBrowser();
   try {
     const page = await browser.newPage();
     await page.goto(url, {
