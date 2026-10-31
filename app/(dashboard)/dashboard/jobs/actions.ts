@@ -10,7 +10,7 @@ import {
 import { createJob, updateJob, deleteJob } from "@/lib/jobs/repository";
 import { createRun } from "@/lib/runs/repository";
 import { enqueueScrape } from "@/lib/queue/enqueue";
-import { registerJobSchedule, unregisterJobSchedule } from "@/lib/queue/schedule";
+import { registerJobSchedule } from "@/lib/queue/schedule";
 import type { Job } from "@/lib/jobs/types";
 
 export type JobActionState = { error: string };
@@ -58,8 +58,8 @@ export async function updateJobAction(
   try {
     const job = await updateJob(id, parsed.data);
 
-    // Schedule di-reset dulu terus didaftarin ulang kalau masih ada.
-    await unregisterJobSchedule(id);
+    // Schedule baru didaftarin, run terjadwal lama berhenti sendiri kalau
+    // schedule dihapus karena config job nggak lagi punya schedule.
     if (job.config.schedule) {
       await registerJobSchedule(id, job.config.schedule.cron);
     }
@@ -72,7 +72,6 @@ export async function updateJobAction(
 }
 
 export async function deleteJobAction(id: string): Promise<void> {
-  await unregisterJobSchedule(id);
   await deleteJob(id);
   revalidatePath("/dashboard/jobs");
   redirect("/dashboard/jobs");

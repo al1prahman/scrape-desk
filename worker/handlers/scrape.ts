@@ -9,6 +9,7 @@ import {
   markRunRunning,
 } from "@/lib/runs/system-repository";
 import { notifyWebhook } from "@/lib/webhooks/notify";
+import { scheduleNextRun } from "@/lib/queue/schedule";
 import type { ScrapeJobData } from "@/lib/queue/enqueue";
 
 async function processScrape(data: ScrapeJobData) {
@@ -52,6 +53,12 @@ async function processScrape(data: ScrapeJobData) {
       error: errorMessage,
       finishedAt: new Date().toISOString(),
     });
+  }
+
+  // Run terjadwal menjadwalkan run berikutnya. Kalau schedule udah dihapus
+  // dari config, rantai berhenti sendiri.
+  if (data.scheduled && jobRow.config.schedule) {
+    await scheduleNextRun(jobId, jobRow.config.schedule.cron);
   }
 }
 

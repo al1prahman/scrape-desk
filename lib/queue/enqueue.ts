@@ -6,6 +6,7 @@ export const SCRAPE_QUEUE = "scrape";
 export type ScrapeJobData = {
   jobId: string;
   runId?: string;
+  scheduled?: boolean;
 };
 
 // Instance short-lived, aman dipanggil dari server action atau environment serverless.
