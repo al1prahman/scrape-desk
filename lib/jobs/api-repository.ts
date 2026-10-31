@@ -41,7 +41,7 @@ export async function createJobForUser(userId: string, input: CreateJobInput): P
       user_id: userId,
       name: input.name,
       target_url: input.targetUrl,
-      config: { fields: input.fields },
+      config: input.config,
     })
     .select()
     .single();

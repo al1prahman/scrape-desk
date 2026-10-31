@@ -35,7 +35,7 @@ export async function createJob(input: CreateJobInput): Promise<Job> {
       user_id: user.id,
       name: input.name,
       target_url: input.targetUrl,
-      config: { fields: input.fields },
+      config: input.config,
     })
     .select()
     .single();
@@ -50,7 +50,7 @@ export async function updateJob(id: string, input: UpdateJobInput): Promise<Job>
   const patch: Record<string, unknown> = {};
   if (input.name !== undefined) patch.name = input.name;
   if (input.targetUrl !== undefined) patch.target_url = input.targetUrl;
-  if (input.fields !== undefined) patch.config = { fields: input.fields };
+  if (input.config !== undefined) patch.config = input.config;
 
   const { data, error } = await supabase
     .from("jobs")

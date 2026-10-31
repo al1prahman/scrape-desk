@@ -1,8 +1,6 @@
-import type { ExtractField } from "@/lib/scrape/types";
+import type { ExtractConfig } from "@/lib/scrape/types";
 
-export type JobConfig = {
-  fields: ExtractField[];
-};
+export type JobConfig = ExtractConfig;
 
 export type Job = {
   id: string;
