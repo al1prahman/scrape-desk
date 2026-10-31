@@ -1,95 +1,168 @@
 # ScrapeDesk
 
-Scraping-as-a-service platform. Define target URL dan field ekstraksi (CSS selector), trigger run, dan terima data terstruktur yang bisa dilihat di dashboard, diexport CSV/JSON, atau ditarik lewat public API dengan API key.
+Scraping-as-a-service platform. Define a target URL and extraction fields, trigger a run, and receive structured data you can view in the dashboard, export as CSV/JSON, or pull through the public API with an API key.
 
-Bukan scraping tool personal: ada multi-user, job management, run history, API akses, dan isolasi data per user lewat Row Level Security.
+This is not a personal scraping script: it has multi-user support, job management, run history, API access, and per-user data isolation via Row Level Security.
+
+## Features
+
+- **Two extraction modes**
+  - CSS selector mode: define field-to-selector mappings, rows assembled by index
+  - AI extraction mode: natural language instructions plus a field schema, powered by any OpenAI-compatible LLM endpoint (local or hosted)
+- **Smart navigation**
+  - Pagination in two modes: next-button click or URL pattern with `{page}` placeholder
+  - Infinite scroll: scrolls until page height stabilizes or maxScrolls is reached
+- **Access for hard targets**
+  - Cookie injection for pages behind a login
+  - Stealth init script that raises the minimum headless-detection bar
+  - Per-job proxy list with round-robin rotation per page
+- **Automation**
+  - Cron scheduling per job, self-perpetuating chain that stops cleanly when the schedule is removed
+  - Webhook notifications with a JSON payload when a run finishes
+- **Platform**
+  - Email/password auth with Supabase, per-user Row Level Security on every table
+  - Job CRUD, run history, realtime status updates on the dashboard via Supabase Realtime
+  - Public REST API with hashed API keys (sha256, plaintext shown once at creation)
+  - CSV/JSON export
+  - Built-in docs page at `/docs`
 
 ## Tech Stack
 
 - Next.js 15 (App Router) + Tailwind v4 + TypeScript strict
 - Supabase: Postgres, Auth, Realtime
-- pg-boss: job queue yang hidup di dalam Postgres, tanpa Redis
-- Playwright + cheerio: worker scraping sebagai proses Node standalone
-- Deploy: web di Vercel, worker di VPS atau mesin lokal
+- pg-boss: job queue living inside Postgres, no Redis
+- Playwright + cheerio: scraping worker as a standalone Node process
+- Deploy: web on Vercel, worker on a VPS or local machine
 
-## Arsitektur
+## Architecture
 
 ```
 Browser / API client
       |
 Next.js (web + route handlers)
   |        \
-Supabase   pg-boss queue (di Postgres)
+Supabase   pg-boss queue (inside Postgres)
 (Auth, RLS,      |
  Realtime)   Worker (Playwright + cheerio)
                    |
               results -> Postgres -> Realtime -> dashboard
 ```
 
-Alur run: user trigger run, row job_runs dibuat dengan status queued, job di-enqueue ke pg-boss, worker mengambil job, update status running, scraping halaman dengan Playwright, ekstrak field dengan cheerio, batch insert ke results, update status done. Dashboard subscribe ke perubahan job_runs via Supabase Realtime.
+Run flow: user triggers a run, a `job_runs` row is created with status `queued`, the job is enqueued to pg-boss, the worker picks it up, sets status `running`, scrapes the page with Playwright, extracts fields with cheerio, batch-inserts into `results`, and sets status `done`. The dashboard subscribes to `job_runs` changes via Supabase Realtime.
 
-Worker memakai service role key secara sengaja karena bertindak atas nama sistem, bukan user. Semua akses user lain dijaga RLS dengan policy auth.uid() = user_id.
+The worker uses the service role key deliberately: it acts on behalf of the system, not a user. All other access is guarded by RLS with `auth.uid() = user_id` policies.
 
-## Setup Lokal
+## Local Setup
 
-1. Bikin project di Supabase, jalankan supabase/schema.sql di SQL Editor
-2. Aktifkan realtime untuk tabel job_runs:
+1. Create a Supabase project and run `supabase/schema.sql` in the SQL Editor
+2. Enable realtime for the runs table:
    ```sql
    alter publication supabase_realtime add table public.job_runs;
    ```
-3. Matikan email confirmation di Authentication > Providers > Email (buat development)
-4. Copy .env.example ke .env.local, isi kredensial:
-   - NEXT_PUBLIC_SUPABASE_URL dan NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY dari API Keys
-   - SUPABASE_SECRET_KEY (server only)
-   - DATABASE_URL dari Connection Pooling session mode (port 5432). Direct connection IPv6-only buat project baru, lokal wajib pakai pooler
-5. npm install && npx playwright install chromium
-6. Dua terminal: npm run dev dan npm run worker
+3. Disable email confirmation under Authentication > Providers > Email (development only)
+4. Copy `.env.example` to `.env.local` and fill in credentials:
+   - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` from API Keys
+   - `SUPABASE_SECRET_KEY` (server only)
+   - `DATABASE_URL` from Connection Pooling session mode (port 5432). New projects are IPv6-only on direct connection, so local development must use the pooler
+   - Optional LLM config for AI mode: `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` (any OpenAI-compatible endpoint)
+5. `npm install && npx playwright install chromium`
+6. Two terminals: `npm run dev` and `npm run worker`
 
 ## Public API
 
-Semua endpoint butuh header Authorization: Bearer sk_live_xxx. Key dibuat dari halaman API Keys, plaintext cuma ditampilkan sekali, disimpan sebagai sha256 hash.
+All endpoints require an `Authorization: Bearer <key>` header. Keys are created from the API Keys page; the plaintext is shown once and stored as a sha256 hash.
 
-- GET /api/v1/jobs
-- POST /api/v1/jobs
-- GET /api/v1/jobs/:id
-- POST /api/v1/jobs/:id/run
-- GET /api/v1/jobs/:id/results (tambah ?format=csv)
+- `GET /api/v1/jobs`
+- `POST /api/v1/jobs`
+- `GET /api/v1/jobs/:id`
+- `POST /api/v1/jobs/:id/run`
+- `GET /api/v1/jobs/:id/results` (add `?format=csv`)
 
-Dokumentasi lengkap ada di halaman /docs.
+Full documentation lives on the `/docs` page.
 
-## Catatan Engineering
+## Job Config Reference
 
-### pg-boss v10: queue harus dibuat eksplisit
+```json
+{
+  "config": {
+    "mode": "css",
+    "fields": [{ "name": "title", "selector": "h2.title" }],
+    "navigation": {
+      "pagination": {
+        "mode": "url-pattern",
+        "urlPattern": "https://example.com/listing?page={page}",
+        "maxPages": 5
+      },
+      "infiniteScroll": { "maxScrolls": 10 }
+    },
+    "cookies": [{ "name": "session", "value": "xxx" }],
+    "proxies": ["http://user:pass@1.2.3.4:8080"],
+    "schedule": { "cron": "0 9 * * *" },
+    "webhookUrl": "https://your-domain.com/webhook"
+  }
+}
+```
 
-Bug pertama yang ketemu saat e2e test: run nyangkut di status queued selamanya tanpa error. Penyebabnya, pg-boss v10 menjalankan INSERT ... SELECT dengan INNER JOIN ke tabel pgboss.queue, dan queue tidak lagi auto-create saat send. Queue yang belum ada bikin insert menghasilkan zero rows dan send() return null tanpa error, job hilang senyap.
+For AI mode, replace `fields` with `instruction` (natural language) and `schema` (field name + description pairs). All navigation, access, and automation options work in both modes.
 
-Solusinya: createQueue dipanggil eksplisit sebelum send, dan enqueue melempar error kalau send return null supaya kegagalan nggak pernah senyap lagi.
+## Engineering Notes
+
+### pg-boss v10: queues must be created explicitly
+
+The first bug found during e2e testing: runs stuck in `queued` forever with no error. pg-boss v10 runs `INSERT ... SELECT` with an INNER JOIN against the `pgboss.queue` table, and queues no longer auto-create on send. A missing queue makes the insert affect zero rows and `send()` return null without error, so the job vanishes silently.
+
+Fix: `createQueue` is called explicitly before send, and enqueue throws if send returns null, so failures never go silent again.
 
 ### Supabase connection pooling
 
-Project Supabase baru hanya bisa diakses via IPv6 pada direct connection. Development lokal di jaringan IPv4 harus memakai Supavisor pooler session mode (port 5432, user postgres.<project-ref>).
+New Supabase projects are IPv6-only on direct connection. Local development on IPv4 networks must use the Supavisor pooler in session mode (port 5432, user `postgres.<project-ref>`).
 
-Pooler free tier maksimal 15 koneksi session mode, jadi pool pg-boss dibatasi: max 2 buat worker, max 1 buat enqueue.
+The free-tier pooler caps at 15 session-mode connections, so pg-boss pools are bounded: max 2 for the worker, max 1 for enqueue.
 
-### Zombie worker
+### Zombie workers
 
-npm run worker spawn tree npm, tsx, node. Stop via Ctrl+C aman karena SIGINT matiin seluruh grup. Tapi kill paksa ke proses npm doang meninggalkan anak proses hidup sebagai zombie yang tetap konsumsi job queue sambil jalanin kode lama. Kalau hasil scraping ngaco, cek jumlah proses node yang jalan.
+`npm run worker` spawns a tree of npm, tsx, and node processes. Ctrl+C is safe because SIGINT kills the whole group. But force-killing only the npm process leaves orphaned children alive as zombies that keep consuming the job queue while running stale code. If scraping results look wrong, check how many node processes are running.
 
-### Strategi ekstraksi MVP
+### Scheduling design
 
-Tiap selector field dikumpulkan sebagai kolom, baris disusun per index. Cocok untuk halaman listing di mana setiap field muncul urut dan sama banyak. Limitasi ini didokumentasikan dan akan ditingkatkan di V2 dengan container-based extraction.
+Schedules are self-perpetuating: every scheduled run schedules the next one via `sendAfter`, computed with cron-parser. When the schedule is removed from the job config, the next scheduled arrival finds no schedule and stops without processing or rescheduling. This design was chosen because pg-boss native schedules are one-per-queue and do not fit many jobs with individual schedules.
 
-### Navigasi dan akses
+### Extraction strategy (MVP)
 
-- Paginasi dua mode: next-selector (klik tombol next) dan url-pattern (ganti {page} di URL), dibatasi maxPages
-- Infinite scroll: scroll sampai tinggi halaman stabil atau maxScrolls tercapai
-- Cookie injection: kirim cookies dari config buat akses halaman butuh login
-- Stealth: init script buat ngangkat ambang deteksi headless minimum (webdriver flag, chrome runtime, plugins, permissions)
+Each field selector is collected as a column and rows are assembled by index. This fits listing pages where every field appears in order and in equal counts. The limitation is documented and will be upgraded in V2 with container-based extraction.
+
+### Stealth scope
+
+The stealth init script raises the minimum headless-detection bar (webdriver flag, chrome runtime, plugins, permissions). It is not a complete anti-bot solution; Cloudflare-class challenges can still block. It is a floor, not a ceiling.
+
+## Security Notes
+
+- All tables have Row Level Security enabled with per-user policies; the API authenticates via hashed API keys; the dashboard is protected by session middleware
+- All external input is validated with zod schemas at the system boundary, with explicit length and count caps
+- Secrets come from environment variables only; `.env.local` is gitignored and no credentials are committed
+- Security headers (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, X-DNS-Prefetch-Control) are set on every response
+- Known considerations, documented rather than hidden: the scraping engine and webhook notifier fetch user-supplied URLs, which is inherent to the product and a self-directed SSRF surface for authenticated users; two npm audit advisories (postcss via next, zod) remain open because fixes are breaking upgrades and both are low-reachability for this deployment (build-time CSS processing of first-party stylesheets; oversized-input validation now capped by schema limits)
+
+## Testing
+
+End-to-end verified against live targets:
+
+- CSS mode: 20 rows from books.toscrape.com
+- AI mode: 3 rows (title/price/stock) through an OpenAI-compatible endpoint
+- Pagination: 60 rows across 3 pages, first row from page 1, last row from page 3
+- Infinite scroll: 100 quotes from quotes.toscrape.com/scroll
+- Cookie injection: verified via httpbin echo of injected cookies
+- Webhook: payload received with correct event, jobId, status, and rowCount
+- Schedule: cron fires, creates the run row, scrapes 20 rows, reschedules the next run, and stops cleanly when the schedule is removed
+- Proxy rotation: verified plumbing via forced `ERR_PROXY_CONNECTION_FAILED` on a dead proxy
 
 ## Roadmap V2
 
-- Scheduling cron per job
-- Proxy rotation per job
-- Webhook notifikasi saat run selesai
-- Quota dan billing
-- Swap engine ke Python Scrapling untuk target susah
+- Container-based extraction (parent selector plus field selectors)
+- Change detection between runs
+- Quota and billing
+- Swap the engine to Python Scrapling for the hardest targets
+
+## License
+
+MIT
