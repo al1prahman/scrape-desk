@@ -11,7 +11,7 @@ export type ScrapeJobData = {
 // Instance short-lived, aman dipanggil dari server action atau environment serverless.
 // Worker memakai instance long-lived sendiri lewat createBoss.
 export async function enqueueScrape(data: ScrapeJobData): Promise<void> {
-  const boss = new PgBoss(env.DATABASE_URL);
+  const boss = new PgBoss({ connectionString: env.DATABASE_URL, max: 1 });
   await boss.start();
   try {
     // pg-boss v10 join send ke tabel queue, queue yang belum ada bikin insert gagal senyap.

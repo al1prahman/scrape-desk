@@ -1,4 +1,5 @@
 import type { Job as BossJob } from "pg-boss";
+import { scrapeJob } from "@/lib/scrape/engine";
 import {
   getJobForSystem,
   insertResults,
@@ -6,7 +7,6 @@ import {
   markRunFailed,
   markRunRunning,
 } from "@/lib/runs/system-repository";
-import { scrapeJob } from "@/lib/scrape/engine";
 import type { ScrapeJobData } from "@/lib/queue/enqueue";
 
 async function processScrape(data: ScrapeJobData) {
