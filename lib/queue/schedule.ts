@@ -1,7 +1,10 @@
-import { parseExpression } from "cron-parser";
+import cronParser from "cron-parser";
 import PgBoss from "pg-boss";
 import { env } from "@/lib/env";
 import { SCRAPE_QUEUE } from "./enqueue";
+
+// cron-parser CJS, default import biar aman di tsx dan Next.js.
+const { parseExpression } = cronParser;
 
 // Jadwal self-perpetuating: tiap run yang datang dari schedule menjadwalkan
 // run berikutnya. Kalau schedule dihapus dari config job, run terjadwal yang
