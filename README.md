@@ -8,6 +8,7 @@ This is not a personal scraping script: it has multi-user support, job managemen
 
 - **Two extraction modes**
   - CSS selector mode: define field-to-selector mappings, rows assembled by index
+  - Container mode: define a container selector plus relative field selectors, one row per container element, no field bleed between rows
   - AI extraction mode: natural language instructions plus a field schema, powered by any OpenAI-compatible LLM endpoint (local or hosted)
 - **Smart navigation**
   - Pagination in two modes: next-button click or URL pattern with `{page}` placeholder
@@ -19,11 +20,13 @@ This is not a personal scraping script: it has multi-user support, job managemen
 - **Automation**
   - Cron scheduling per job, self-perpetuating chain that stops cleanly when the schedule is removed
   - Webhook notifications with a JSON payload when a run finishes
+  - Change detection: every run result page shows a set-based diff against the previous completed run (added, removed, unchanged, with samples)
 - **Platform**
   - Email/password auth with Supabase, per-user Row Level Security on every table
   - Job CRUD, run history, realtime status updates on the dashboard via Supabase Realtime
   - Public REST API with hashed API keys (sha256, plaintext shown once at creation)
   - CSV/JSON export
+  - Daily run quota per user (default 50, override with DAILY_RUN_QUOTA), enforced on dashboard and API, usage shown on the overview page
   - Built-in docs page at `/docs`
 
 ## Tech Stack
@@ -105,6 +108,8 @@ Full documentation lives on the `/docs` page.
 
 For AI mode, replace `fields` with `instruction` (natural language) and `schema` (field name + description pairs). All navigation, access, and automation options work in both modes.
 
+In CSS mode, `containerSelector` is optional. When set, each matching element becomes one row and field selectors are resolved relative to it. When empty, fields are collected as columns and rows are assembled by index.
+
 ## Engineering Notes
 
 ### pg-boss v10: queues must be created explicitly
@@ -127,9 +132,18 @@ The free-tier pooler caps at 15 session-mode connections, so pg-boss pools are b
 
 Schedules are self-perpetuating: every scheduled run schedules the next one via `sendAfter`, computed with cron-parser. When the schedule is removed from the job config, the next scheduled arrival finds no schedule and stops without processing or rescheduling. This design was chosen because pg-boss native schedules are one-per-queue and do not fit many jobs with individual schedules.
 
-### Extraction strategy (MVP)
+### Extraction strategy
 
-Each field selector is collected as a column and rows are assembled by index. This fits listing pages where every field appears in order and in equal counts. The limitation is documented and will be upgraded in V2 with container-based extraction.
+Two CSS strategies:
+
+- Container mode (`containerSelector` set): each matching element is one row, fields are resolved relative to the container. No field can bleed between rows. This is the correct default for listing pages.
+- Column mode (`containerSelector` empty): each field selector is collected as a column and rows are assembled by index. Fits pages where every field appears in order and in equal counts.
+
+### Change detection
+
+Diffs are set-based on a hash of each row's content, compared against the previous completed run of the same job. A changed row appears as one removed plus one added, which is honest set-diff semantics without requiring a stable key from the user. Comparisons are capped at 1000 rows per run.
+
+Run ordering uses `queued_at`, not the UUID id: `gen_random_uuid()` is random, so id order says nothing about time order. This was a real bug caught by e2e testing.
 
 ### Stealth scope
 
@@ -148,6 +162,7 @@ The stealth init script raises the minimum headless-detection bar (webdriver fla
 End-to-end verified against live targets:
 
 - CSS mode: 20 rows from books.toscrape.com
+- Container mode: 20 rows with per-container field scoping, verified no field bleed (all prices match the £ format, titles match real books)
 - AI mode: 3 rows (title/price/stock) through an OpenAI-compatible endpoint
 - Pagination: 60 rows across 3 pages, first row from page 1, last row from page 3
 - Infinite scroll: 100 quotes from quotes.toscrape.com/scroll
@@ -155,13 +170,18 @@ End-to-end verified against live targets:
 - Webhook: payload received with correct event, jobId, status, and rowCount
 - Schedule: cron fires, creates the run row, scrapes 20 rows, reschedules the next run, and stops cleanly when the schedule is removed
 - Proxy rotation: verified plumbing via forced `ERR_PROXY_CONNECTION_FAILED` on a dead proxy
+- Change detection: identical re-runs produce 0 added, 0 removed, 20 unchanged; an edited row is detected as 1 added plus 1 removed
+- Quota: daily count via jobs join verified correct
 
-## Roadmap V2
+## Deployment
 
-- Container-based extraction (parent selector plus field selectors)
-- Change detection between runs
-- Quota and billing
-- Swap the engine to Python Scrapling for the hardest targets
+See [DEPLOY.md](DEPLOY.md). Short version: web on Vercel (zero-config), worker on a VPS with PM2 (`ecosystem.config.cjs` included). The two processes share one Supabase database and communicate through the pg-boss queue.
+
+## Roadmap V3
+
+- True change detection with a user-defined stable key (row identity instead of content hash)
+- Stripe billing on top of the existing quota metering
+- Quota tiers per plan
 
 ## License
 

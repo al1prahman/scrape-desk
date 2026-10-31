@@ -156,6 +156,41 @@ curl https://domain-lo.com/api/v1/jobs/JOB_ID/results \\
       </section>
 
       <section className="mt-12">
+        <h2 className="text-lg font-medium">Container mode</h2>
+        <p className="mt-2 text-sm text-muted">
+          Di mode css, containerSelector opsional. Kalau diisi, tiap elemen yang match jadi satu
+          baris dan field selector diekstrak relatif di dalam container, jadi field nggak bisa bocor
+          antar baris:
+        </p>
+        <pre className="mt-3 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
+          {`{
+  "config": {
+    "mode": "css",
+    "containerSelector": "article.product_pod",
+    "fields": [
+      { "name": "title", "selector": "h3 a" },
+      { "name": "price", "selector": "p.price_color" }
+    ]
+  }
+}`}
+        </pre>
+        <p className="mt-3 text-sm text-muted">
+          Kalau containerSelector kosong, field dikumpulkan sebagai kolom dan baris disusun per
+          index, cocok buat halaman di mana tiap field muncul urut dan sama banyak.
+        </p>
+      </section>
+
+      <section className="mt-12">
+        <h2 className="text-lg font-medium">Kuota harian</h2>
+        <p className="mt-2 text-sm text-muted">
+          Tiap user dibatasi 50 run per hari secara default, bisa dioverride lewat env
+          DAILY_RUN_QUOTA. Kuota dihitung dari jumlah job_runs yang di-queue hari ini dan direset
+          tengah malam UTC. Kalau habis, trigger run balik error 429 dengan code QUOTA_EXCEEDED.
+          Pemakaian kuota tampil di halaman overview dashboard.
+        </p>
+      </section>
+
+      <section className="mt-12">
         <h2 className="text-lg font-medium">Format response</h2>
         <p className="mt-2 text-sm text-muted">
           Sukses dibungkus dalam data, error dalam error dengan code yang bisa diproses
