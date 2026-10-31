@@ -6,7 +6,7 @@ import {
   markRunFailed,
   markRunRunning,
 } from "@/lib/runs/system-repository";
-import { scrapeUrl } from "@/lib/scrape/engine";
+import { scrapeJob } from "@/lib/scrape/engine";
 import type { ScrapeJobData } from "@/lib/queue/enqueue";
 
 async function processScrape(data: ScrapeJobData) {
@@ -21,7 +21,7 @@ async function processScrape(data: ScrapeJobData) {
   await markRunRunning(runId);
 
   try {
-    const rows = await scrapeUrl(jobRow.target_url, jobRow.config);
+    const rows = await scrapeJob(jobRow.target_url, jobRow.config);
     await insertResults(runId, rows);
     await markRunDone(runId, rows.length);
   } catch (error) {
