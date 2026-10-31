@@ -1,7 +1,10 @@
 import { chromium, type BrowserContext, type Page } from "playwright";
 import { extractRows } from "./extract";
 import { extractWithAi } from "./ai-extract";
-import type { ExtractConfig, ScrapedRow } from "./types";
+import { scrapeApi } from "./api-source";
+import { scrapeFeed } from "./feed-source";
+import { fetchSitemapUrls } from "./sitemap-source";
+import type { CssExtractConfig, ExtractConfig, ScrapedRow } from "./types";
 
 const NAV_TIMEOUT_MS = 30_000;
 const SELECTOR_TIMEOUT_MS = 10_000;
@@ -151,6 +154,38 @@ async function collectWithRetry(url: string, config: ExtractConfig): Promise<str
 }
 
 export async function scrapeJob(url: string, config: ExtractConfig): Promise<ScrapedRow[]> {
+  const sourceType = config.sourceType ?? "web";
+
+  if (sourceType === "api" && config.mode === "css") {
+    const { rows } = await scrapeApi(url, {
+      fields: config.fields,
+      limit: config.limit,
+      cookies: config.cookies,
+      api: config.api,
+    });
+    return rows;
+  }
+
+  if (sourceType === "feed") {
+    return scrapeFeed(url, config.limit);
+  }
+
+  if (sourceType === "sitemap" && config.mode === "css") {
+    const cssConfig = config as CssExtractConfig;
+    const urls = await fetchSitemapUrls(url, cssConfig.sitemap ?? {});
+    const allRows: ScrapedRow[] = [];
+
+    for (const pageUrl of urls) {
+      const htmls = await collectWithRetry(pageUrl, cssConfig);
+      for (const html of htmls) {
+        allRows.push(...extractRows(html, cssConfig));
+      }
+      if (cssConfig.limit && allRows.length >= cssConfig.limit) break;
+    }
+
+    return cssConfig.limit ? allRows.slice(0, cssConfig.limit) : allRows;
+  }
+
   const htmls = await collectWithRetry(url, config);
   const allRows: ScrapedRow[] = [];
 

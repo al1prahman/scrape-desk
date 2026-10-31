@@ -26,6 +26,31 @@ export type ScheduleConfig = {
   cron: string;
 };
 
+// Sumber data. Web = render halaman HTML (default), API = fetch JSON,
+// feed = RSS/Atom, sitemap = crawl URL dari sitemap.xml.
+export type SourceType = "web" | "api" | "feed" | "sitemap";
+
+export type ApiPagination =
+  | { type: "page"; pageParam: string; startPage?: number; maxPages: number; sizeParam?: string; pageSize?: number }
+  | { type: "cursor"; cursorParam: string; cursorPath: string; maxPages: number }
+  | { type: "link"; nextPath: string; maxPages: number };
+
+export type ApiSourceConfig = {
+  method?: "GET" | "POST";
+  headers?: Record<string, string>;
+  body?: string;
+  // Dot path ke array item di response, misal "results" atau "data.papers".
+  // Kosong berarti response itu sendiri array.
+  itemsPath?: string;
+  pagination?: ApiPagination;
+};
+
+export type SitemapSourceConfig = {
+  // URL yang nggak mengandung substring ini dibuang, kosong berarti semua.
+  urlFilter?: string;
+  maxUrls?: number;
+};
+
 export type CssExtractConfig = {
   mode: "css";
   fields: ExtractField[];
@@ -36,6 +61,9 @@ export type CssExtractConfig = {
   proxies?: string[];
   schedule?: ScheduleConfig;
   webhookUrl?: string;
+  sourceType?: SourceType;
+  api?: ApiSourceConfig;
+  sitemap?: SitemapSourceConfig;
 };
 
 export type AiExtractConfig = {
@@ -48,6 +76,7 @@ export type AiExtractConfig = {
   proxies?: string[];
   schedule?: ScheduleConfig;
   webhookUrl?: string;
+  sourceType?: SourceType;
 };
 
 export type ExtractConfig = CssExtractConfig | AiExtractConfig;

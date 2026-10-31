@@ -37,6 +37,43 @@ const scheduleSchema = z.object({
 
 const proxySchema = z.string().url().max(500);
 
+const sourceTypeSchema = z.enum(["web", "api", "feed", "sitemap"]);
+
+const apiPaginationSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("page"),
+    pageParam: z.string().min(1, "Nama query param halaman wajib diisi").max(100),
+    startPage: z.number().int().min(1).max(10000).optional(),
+    maxPages: z.number().int().min(1).max(50),
+    sizeParam: z.string().max(100).optional(),
+    pageSize: z.number().int().min(1).max(500).optional(),
+  }),
+  z.object({
+    type: z.literal("cursor"),
+    cursorParam: z.string().min(1, "Nama query param cursor wajib diisi").max(100),
+    cursorPath: z.string().min(1, "Path cursor di response wajib diisi").max(200),
+    maxPages: z.number().int().min(1).max(50),
+  }),
+  z.object({
+    type: z.literal("link"),
+    nextPath: z.string().min(1, "Path URL next di response wajib diisi").max(200),
+    maxPages: z.number().int().min(1).max(50),
+  }),
+]);
+
+const apiSourceSchema = z.object({
+  method: z.enum(["GET", "POST"]).optional(),
+  headers: z.record(z.string().max(200), z.string().max(2000)).optional(),
+  body: z.string().max(10000).optional(),
+  itemsPath: z.string().max(200).optional(),
+  pagination: apiPaginationSchema.optional(),
+});
+
+const sitemapSourceSchema = z.object({
+  urlFilter: z.string().max(500).optional(),
+  maxUrls: z.number().int().min(1).max(500).optional(),
+});
+
 const cssConfigSchema = z.object({
   mode: z.literal("css"),
   fields: z
@@ -55,6 +92,9 @@ const cssConfigSchema = z.object({
   proxies: z.array(proxySchema).max(20).optional(),
   schedule: scheduleSchema.optional(),
   webhookUrl: z.string().url().max(500).optional(),
+  sourceType: sourceTypeSchema.optional(),
+  api: apiSourceSchema.optional(),
+  sitemap: sitemapSourceSchema.optional(),
 });
 
 const aiConfigSchema = z.object({
@@ -75,6 +115,7 @@ const aiConfigSchema = z.object({
   proxies: z.array(proxySchema).max(20).optional(),
   schedule: scheduleSchema.optional(),
   webhookUrl: z.string().url().max(500).optional(),
+  sourceType: sourceTypeSchema.optional(),
 });
 
 export const extractConfigSchema = z.discriminatedUnion("mode", [cssConfigSchema, aiConfigSchema]);
