@@ -48,6 +48,7 @@ const cssConfigSchema = z.object({
     )
     .min(1, "Minimal satu field ekstraksi")
     .max(50, "Maksimal 50 field ekstraksi"),
+  containerSelector: z.string().max(500).optional(),
   limit: z.number().int().positive().max(10000).optional(),
   navigation: navigationSchema.optional(),
   cookies: z.array(cookieSchema).max(50).optional(),

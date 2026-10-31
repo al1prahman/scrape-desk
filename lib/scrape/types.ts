@@ -29,6 +29,7 @@ export type ScheduleConfig = {
 export type CssExtractConfig = {
   mode: "css";
   fields: ExtractField[];
+  containerSelector?: string;
   limit?: number;
   navigation?: NavigationConfig;
   cookies?: Cookie[];

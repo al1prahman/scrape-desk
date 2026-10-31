@@ -94,6 +94,9 @@ export function JobForm({ action, submitLabel, initialValues }: JobFormProps) {
   );
   const [cron, setCron] = useState(initialConfig?.schedule?.cron ?? "");
   const [webhookUrl, setWebhookUrl] = useState(initialConfig?.webhookUrl ?? "");
+  const [containerSelector, setContainerSelector] = useState(
+    initialConfig?.mode === "css" ? (initialConfig.containerSelector ?? "") : "",
+  );
 
   const [state, formAction, pending] = useActionState(action, { error: "" });
 
@@ -127,7 +130,11 @@ export function JobForm({ action, submitLabel, initialValues }: JobFormProps) {
 
     const base =
       mode === "css"
-        ? { mode: "css" as const, fields: cssFields }
+        ? {
+            mode: "css" as const,
+            fields: cssFields,
+            ...(containerSelector.trim() ? { containerSelector: containerSelector.trim() } : {}),
+          }
         : { mode: "ai" as const, instruction, schema: aiFields };
 
     return {
@@ -205,6 +212,19 @@ export function JobForm({ action, submitLabel, initialValues }: JobFormProps) {
 
       {mode === "css" ? (
         <div>
+          <div>
+            <label htmlFor="containerSelector" className="block text-sm text-muted">
+              Container selector, opsional. Kalau diisi, tiap elemen yang match jadi satu baris dan
+              field diekstrak relatif di dalamnya. Kalau kosong, field dikumpulkan sebagai kolom.
+            </label>
+            <input
+              id="containerSelector"
+              value={containerSelector}
+              onChange={(event) => setContainerSelector(event.target.value)}
+              className={inputClass}
+              placeholder="article.product_pod"
+            />
+          </div>
           <div className="flex items-center justify-between">
             <span className="block text-sm text-muted">Field ekstraksi</span>
             <button
