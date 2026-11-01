@@ -64,6 +64,9 @@ export default function LandingPage() {
           <Link href="/register" className={buttonClass("primary")}>
             Mulai gratis
           </Link>
+          <Link href="/tutorial" className={buttonClass("secondary")}>
+            Tutorial lengkap
+          </Link>
           <Link href="/docs" className={buttonClass("secondary")}>
             Lihat API docs
           </Link>

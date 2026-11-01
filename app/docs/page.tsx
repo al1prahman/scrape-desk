@@ -41,8 +41,12 @@ export default function DocsPage() {
       <p className="font-mono text-xs uppercase tracking-widest text-subtle">scrape-desk</p>
       <h1 className="mt-4 text-3xl font-semibold tracking-tight">API Docs</h1>
       <p className="mt-3 text-muted">
-        Public API dipakai buat submit job dan tarik hasil dari aplikasi lo sendiri. Semua
-        request butuh header Authorization dengan API key dari dashboard.
+        Public API dipakai buat submit job dan tarik hasil dari aplikasi lo sendiri. Semua request
+        butuh header Authorization dengan API key dari dashboard. Panduan lengkap pakai sistem ada di{" "}
+        <Link href="/tutorial" className="underline">
+          halaman Tutorial
+        </Link>
+        .
       </p>
 
       <section className="mt-12">
