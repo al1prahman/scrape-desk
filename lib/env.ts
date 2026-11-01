@@ -9,6 +9,10 @@ const envSchema = z.object({
   LLM_BASE_URL: z.string().url().default("http://localhost:20128/v1"),
   LLM_API_KEY: z.string().default("not-needed"),
   LLM_MODEL: z.string().default("gpt-4o-mini"),
+  // Opsional: kalau diset, payload webhook ditandatangani HMAC-SHA256.
+  WEBHOOK_SECRET: z.string().optional(),
+  // Opsional: delay minimum antar request ke domain yang sama, milidetik.
+  DOMAIN_DELAY_MS: z.coerce.number().int().min(0).default(1000),
 });
 
 export type Env = z.infer<typeof envSchema>;

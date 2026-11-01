@@ -5,6 +5,7 @@ import { scrapeApi } from "./api-source";
 import { scrapeFeed } from "./feed-source";
 import { fetchSitemapUrls } from "./sitemap-source";
 import { normalizeConfig } from "./normalize";
+import { respectDomainDelay } from "./rate-limit";
 import type { CssExtractConfig, ExtractConfig, ScrapedRow } from "./types";
 
 const NAV_TIMEOUT_MS = 30_000;
@@ -69,6 +70,9 @@ async function collectPageHtmls(url: string, config: ExtractConfig): Promise<str
     let currentUrl = url;
 
     for (let pageNumber = 1; pageNumber <= maxPages; pageNumber++) {
+      // Politeness: jeda minimum antar request ke domain yang sama.
+      await respectDomainDelay(currentUrl);
+
       // Proxy dirotasi round-robin per halaman. Nggak ada proxy berarti koneksi langsung.
       const proxy = proxies.length > 0 ? proxies[(pageNumber - 1) % proxies.length] : undefined;
       const context = await browser.newContext(proxy ? { proxy: { server: proxy } } : {});

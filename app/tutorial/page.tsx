@@ -8,6 +8,7 @@ const sections = [
   { id: "navigasi", label: "Navigasi" },
   { id: "akses", label: "Akses situs sulit" },
   { id: "otomasi", label: "Otomasi" },
+  { id: "reliability", label: "Reliability" },
   { id: "perubahan", label: "Change detection" },
   { id: "kuota", label: "Kuota" },
   { id: "api", label: "API dan export" },
@@ -205,7 +206,9 @@ Fields:      title -> h3 a
         </p>
         <p className="mt-2 text-sm text-muted">
           Webhook: isi URL webhook, sistem POST JSON ke URL itu setiap run selesai, berisi event,
-          jobId, runId, status, rowCount, dan error kalau ada.
+          jobId, runId, status, rowCount, dan error kalau ada. Kalau environment WEBHOOK_SECRET
+          diset, payload ditandatangani HMAC-SHA256 dan dikirim di header
+          X-ScrapeDesk-Signature, jadi receiver bisa verifikasi payload beneran dari sistem ini.
         </p>
         <pre className="mt-3 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
           {`{
@@ -218,6 +221,20 @@ Fields:      title -> h3 a
   "finishedAt": "2026-10-31T10:00:00.000Z"
 }`}
         </pre>
+      </section>
+
+      <section id="reliability" className="mt-12">
+        <h2 className="text-lg font-medium">Reliability</h2>
+        <p className="mt-2 text-sm text-muted">
+          Retry otomatis: run yang gagal langsung di-retry dua kali dengan jeda menaik, 30 detik
+          lalu 60 detik. Attempt terakhir yang menentukan status failed, jadi error sementara kayak
+          jaringan atau situs down nggak langsung bikin run mati.
+        </p>
+        <p className="mt-2 text-sm text-muted">
+          Politeness per domain: sistem nggak nembak domain yang sama lebih cepat dari
+          DOMAIN_DELAY_MS, default 1 detik. Ini ngurangin risiko kena ban dan sopan ke server
+          target.
+        </p>
       </section>
 
       <section id="perubahan" className="mt-12">

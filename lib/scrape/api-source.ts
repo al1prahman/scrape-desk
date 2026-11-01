@@ -1,4 +1,5 @@
 import type { ApiPagination, ApiSourceConfig, Cookie, ScrapedRow } from "./types";
+import { respectDomainDelay } from "./rate-limit";
 
 const FETCH_TIMEOUT_MS = 30_000;
 
@@ -43,6 +44,9 @@ async function fetchJson(
   api: ApiSourceConfig,
   cookies: Cookie[],
 ): Promise<unknown> {
+  // Politeness: jeda minimum antar request ke domain yang sama.
+  await respectDomainDelay(url);
+
   const headers: Record<string, string> = {
     Accept: "application/json",
     ...api.headers,

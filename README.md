@@ -24,8 +24,11 @@ This is not a personal scraping script: it has multi-user support, job managemen
   - Per-job proxy list with round-robin rotation per page
 - **Automation**
   - Cron scheduling per job, self-perpetuating chain that stops cleanly when the schedule is removed
-  - Webhook notifications with a JSON payload when a run finishes
+  - Webhook notifications with a JSON payload when a run finishes, HMAC-SHA256 signed when WEBHOOK_SECRET is set
   - Change detection: every run result page shows a set-based diff against the previous completed run (added, removed, unchanged, with samples)
+- **Reliability**
+  - Automatic retry with exponential backoff (2 retries, 30s then 60s) on scrape failures
+  - Per-domain politeness delay (DOMAIN_DELAY_MS, default 1s) so the system does not hammer a single host
 - **Platform**
   - Email/password auth with Supabase, per-user Row Level Security on every table
   - Job CRUD, run history, realtime status updates on the dashboard via Supabase Realtime
@@ -126,6 +129,18 @@ In CSS mode, `containerSelector` is optional. When set, each matching element be
 
 `scrapeJob` dispatches on `sourceType`: web renders HTML through Playwright (the default, fully backward compatible), api fetches JSON with dot-path field mapping and three pagination strategies, feed parses RSS/Atom into fixed columns, and sitemap discovers URLs then runs the web extraction per page. One pipeline, four input shapes, one output shape.
 
+### Retry with backoff
+
+Enqueued jobs carry `retryLimit: 2, retryDelay: 30, retryBackoff: true`. The worker handler marks a run failed, then rethrows if attempts remain, so pg-boss reschedules with exponential backoff (30s, then 60s). The final attempt is the one that stays failed. The handler reads `retryCount`/`retryLimit` from pg-boss job metadata, which requires `work` with `includeMetadata: true`.
+
+### Webhook signing
+
+When `WEBHOOK_SECRET` is set, the payload body is signed with HMAC-SHA256 and sent in the `X-ScrapeDesk-Signature` header as `sha256=<hex>`. Receivers verify by recomputing the HMAC over the raw body. Without the secret, webhooks still fire unsigned.
+
+### Domain politeness
+
+`respectDomainDelay` keeps an in-memory map of the last hit time per hostname and sleeps before a request if the same domain was hit less than `DOMAIN_DELAY_MS` ago. The delay is read lazily from `process.env` rather than the validated env module so the module stays importable in unit tests.
+
 ### pg-boss v10: queues must be created explicitly
 
 The first bug found during e2e testing: runs stuck in `queued` forever with no error. pg-boss v10 runs `INSERT ... SELECT` with an INNER JOIN against the `pgboss.queue` table, and queues no longer auto-create on send. A missing queue makes the insert affect zero rows and `send()` return null without error, so the job vanishes silently.
@@ -172,6 +187,15 @@ The stealth init script raises the minimum headless-detection bar (webdriver fla
 - Known considerations, documented rather than hidden: the scraping engine and webhook notifier fetch user-supplied URLs, which is inherent to the product and a self-directed SSRF surface for authenticated users; two npm audit advisories (postcss via next, zod) remain open because fixes are breaking upgrades and both are low-reachability for this deployment (build-time CSS processing of first-party stylesheets; oversized-input validation now capped by schema limits)
 
 ## Testing
+
+65 unit tests across 9 files, run with `npm test`:
+
+```
+npm test        # run once
+npm run test:watch  # watch mode
+```
+
+Coverage: config normalization (including legacy rows without a mode field), column resolution, container and column extraction, set-based diffing, API dot-path mapping and pagination, RSS/Atom parsing, sitemap index recursion, zod validation boundaries, and domain rate limiting.
 
 End-to-end verified against live targets:
 
