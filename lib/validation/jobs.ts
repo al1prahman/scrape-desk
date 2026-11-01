@@ -74,6 +74,54 @@ const sitemapSourceSchema = z.object({
   maxUrls: z.number().int().min(1).max(500).optional(),
 });
 
+const transformSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("regex"),
+    field: z.string().min(1, "Field wajib diisi").max(50),
+    pattern: z.string().min(1, "Pattern regex wajib diisi").max(500),
+    group: z.number().int().min(1).max(99).optional(),
+    target: z.string().max(50).optional(),
+  }),
+  z.object({
+    type: z.literal("replace"),
+    field: z.string().min(1, "Field wajib diisi").max(50),
+    from: z.string().min(1, "Teks yang dicari wajib diisi").max(200),
+    to: z.string().max(200),
+  }),
+  z.object({
+    type: z.literal("number"),
+    field: z.string().min(1, "Field wajib diisi").max(50),
+    target: z.string().max(50).optional(),
+  }),
+  z.object({
+    type: z.literal("prefix"),
+    field: z.string().min(1, "Field wajib diisi").max(50),
+    value: z.string().max(200),
+    target: z.string().max(50).optional(),
+  }),
+  z.object({
+    type: z.literal("suffix"),
+    field: z.string().min(1, "Field wajib diisi").max(50),
+    value: z.string().max(200),
+    target: z.string().max(50).optional(),
+  }),
+  z.object({
+    type: z.literal("lowercase"),
+    field: z.string().min(1, "Field wajib diisi").max(50),
+    target: z.string().max(50).optional(),
+  }),
+  z.object({
+    type: z.literal("uppercase"),
+    field: z.string().min(1, "Field wajib diisi").max(50),
+    target: z.string().max(50).optional(),
+  }),
+  z.object({
+    type: z.literal("template"),
+    template: z.string().min(1, "Template wajib diisi").max(500),
+    target: z.string().min(1, "Kolom target wajib diisi").max(50),
+  }),
+]);
+
 const cssConfigSchema = z.object({
   mode: z.literal("css"),
   fields: z
@@ -95,6 +143,7 @@ const cssConfigSchema = z.object({
   sourceType: sourceTypeSchema.optional(),
   api: apiSourceSchema.optional(),
   sitemap: sitemapSourceSchema.optional(),
+  transforms: z.array(transformSchema).max(20).optional(),
 });
 
 const aiConfigSchema = z.object({

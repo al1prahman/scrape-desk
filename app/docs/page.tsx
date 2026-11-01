@@ -170,6 +170,28 @@ curl https://domain-lo.com/api/v1/jobs/JOB_ID/results \\
       </section>
 
       <section className="mt-12">
+        <h2 className="text-lg font-medium">Transformasi data</h2>
+        <p className="mt-2 text-sm text-muted">
+          Config job mode css punya array transforms opsional, dijalanin berurutan setelah
+          ekstraksi. Delapan jenis: regex, number, replace, prefix, suffix, lowercase, uppercase,
+          dan template. Tiap transform punya field sumber dan target opsional, kosong berarti nimpa
+          field asal.
+        </p>
+        <pre className="mt-3 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
+          {`{
+  "config": {
+    "mode": "css",
+    "fields": [{ "name": "price", "selector": ".price" }],
+    "transforms": [
+      { "type": "number", "field": "price", "target": "priceNumber" },
+      { "type": "template", "template": "{{title}} - {{priceNumber}}", "target": "kartu" }
+    ]
+  }
+}`}
+        </pre>
+      </section>
+
+      <section className="mt-12">
         <h2 className="text-lg font-medium">Container mode</h2>
         <p className="mt-2 text-sm text-muted">
           Di mode css, containerSelector opsional. Kalau diisi, tiap elemen yang match jadi satu

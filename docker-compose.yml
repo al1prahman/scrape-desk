@@ -1,0 +1,29 @@
+# Full stack lokal pakai Docker: web dan worker.
+#
+#   docker compose up --build
+#
+# Web: http://localhost:3000
+# Worker: proses terpisah, share database Supabase yang sama lewat DATABASE_URL.
+# Queue pg-boss juga hidup di database Supabase yang sama, jadi nggak perlu
+# Postgres tambahan.
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    env_file:
+      - .env.local
+    restart: unless-stopped
+    deploy:
+      replicas: 1

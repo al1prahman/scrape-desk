@@ -1,0 +1,308 @@
+openapi: 3.0.3
+
+info:
+  title: ScrapeDesk API
+  version: 1.0.0
+  description: |
+    Public API buat submit job scraping dan tarik hasilnya.
+
+    Semua request butuh header Authorization dengan API key yang dibuat dari
+    halaman API Keys di dashboard. Plaintext key cuma ditampilkan sekali saat
+    create, disimpan sebagai sha256 hash.
+
+    Rate limit: tiap user dibatasi 50 run per hari (default, bisa dioverride
+    lewat env DAILY_RUN_QUOTA). Kalau habis, trigger run balik 429
+    QUOTA_EXCEEDED.
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: API key dari dashboard, format sk_live_xxx
+
+  schemas:
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        target_url:
+          type: string
+          format: uri
+        config:
+          type: object
+          description: |
+            Konfigurasi job. Field utama:
+            - sourceType: web (default), api, feed, sitemap
+            - mode: css atau ai
+            - fields: array {name, selector}. Di mode api, selector adalah dot path JSON
+            - containerSelector: opsional, mode container
+            - navigation: paginasi dan infinite scroll
+            - cookies, proxies, schedule, webhookUrl, api, sitemap, transforms
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Run:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        job_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, running, done, failed]
+        trigger:
+          type: string
+          enum: [manual, schedule]
+        row_count:
+          type: integer
+        error:
+          type: string
+          nullable: true
+        queued_at:
+          type: string
+          format: date-time
+
+    ResultsResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        runId:
+          type: string
+          format: uuid
+        columns:
+          type: array
+          items:
+            type: string
+        rows:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: string
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum:
+                - VALIDATION_ERROR
+                - UNAUTHORIZED
+                - NOT_FOUND
+                - FORBIDDEN
+                - QUOTA_EXCEEDED
+                - INTERNAL_ERROR
+            message:
+              type: string
+
+paths:
+  /api/v1/jobs:
+    get:
+      summary: List semua job milik akun
+      responses:
+        "200":
+          description: Daftar job
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      jobs:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Job"
+        "401":
+          description: API key nggak valid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: Bikin job baru
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, targetUrl, config]
+              properties:
+                name:
+                  type: string
+                  maxLength: 100
+                targetUrl:
+                  type: string
+                  format: uri
+                config:
+                  type: object
+      responses:
+        "201":
+          description: Job dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      job:
+                        $ref: "#/components/schemas/Job"
+        "400":
+          description: Input nggak valid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: API key nggak valid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/v1/jobs/{id}:
+    get:
+      summary: Detail satu job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Detail job
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      job:
+                        $ref: "#/components/schemas/Job"
+        "401":
+          description: API key nggak valid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Job nggak ada atau bukan milik lo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/v1/jobs/{id}/run:
+    post:
+      summary: Trigger run, hasilnya masuk queue dan diproses worker
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: Run dibuat dan masuk queue
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      run:
+                        $ref: "#/components/schemas/Run"
+        "401":
+          description: API key nggak valid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Job nggak ada atau bukan milik lo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Kuota harian habis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/v1/jobs/{id}/results:
+    get:
+      summary: Ambil hasil run terakhir yang selesai
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [json, csv]
+            default: json
+          description: Tambah ?format=csv buat download CSV
+      responses:
+        "200":
+          description: Hasil run, JSON atau CSV tergantung query format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResultsResponse"
+            text/csv:
+              schema:
+                type: string
+        "401":
+          description: API key nggak valid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Job nggak ada atau belum ada run selesai
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"

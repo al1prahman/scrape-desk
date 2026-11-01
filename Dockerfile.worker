@@ -1,0 +1,17 @@
+# Worker butuh Chromium dan system deps Playwright.
+FROM mcr.microsoft.com/playwright:v1.49.0-jammy AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+
+FROM mcr.microsoft.com/playwright/v1.49.0-jammy
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Browser udah pre-install di base image, tapi pastikan chromium ada.
+RUN npx playwright install chromium
+
+CMD ["npx", "tsx", "--env-file=.env.local", "worker/index.ts"]

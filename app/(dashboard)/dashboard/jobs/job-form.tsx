@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { buttonClass } from "@/components/ui/button";
-import type { Cookie, ExtractConfig, NavigationConfig } from "@/lib/scrape/types";
+import type { Cookie, ExtractConfig, NavigationConfig, Transform } from "@/lib/scrape/types";
 
 type CssField = { name: string; selector: string };
 type AiField = { name: string; description: string };
@@ -126,6 +126,9 @@ export function JobForm({ action, submitLabel, initialValues }: JobFormProps) {
   const [maxUrls, setMaxUrls] = useState(
     initialConfig?.mode === "css" ? (initialConfig.sitemap?.maxUrls ?? 10) : 10,
   );
+  const [transforms, setTransforms] = useState<Transform[]>(
+    initialConfig?.mode === "css" && initialConfig.transforms ? initialConfig.transforms : [],
+  );
 
   const [state, formAction, pending] = useActionState(action, { error: "" });
 
@@ -239,6 +242,7 @@ export function JobForm({ action, submitLabel, initialValues }: JobFormProps) {
       ...(sourceType !== "web" ? { sourceType } : {}),
       ...apiConfig,
       ...sitemapConfig,
+      ...(transforms.length > 0 ? { transforms } : {}),
     };
   }
 
@@ -634,6 +638,310 @@ export function JobForm({ action, submitLabel, initialValues }: JobFormProps) {
                 </button>
               </div>
             ))}
+          </div>
+
+          <div className="mt-6">
+            <div className="flex items-center justify-between">
+              <span className="block text-sm text-muted">
+                Transformasi data, opsional. Dijalanin berurutan setelah ekstraksi.
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setTransforms((prev) => [
+                    ...prev,
+                    { type: "regex", field: "", pattern: "", target: "" },
+                  ])
+                }
+                className="text-sm text-muted transition-colors hover:text-ink"
+              >
+                Tambah transform
+              </button>
+            </div>
+            <div className="mt-3 space-y-3">
+              {transforms.map((transform, index) => (
+                <div key={index} className="rounded-card border border-line p-3">
+                  <div className="flex items-end gap-3">
+                    <div className="flex-1">
+                      <label htmlFor={`transform-type-${index}`} className="block text-xs text-subtle">
+                        Jenis
+                      </label>
+                      <select
+                        id={`transform-type-${index}`}
+                        value={transform.type}
+                        onChange={(event) => {
+                          const type = event.target.value as Transform["type"];
+                          setTransforms((prev) =>
+                            prev.map((item, i) => {
+                              if (i !== index) return item;
+                              if (type === "template") {
+                                return { type: "template", template: "", target: "" };
+                              }
+                              const field =
+                                "field" in item && typeof item.field === "string" ? item.field : "";
+                              if (type === "regex") {
+                                return { type: "regex", field, pattern: "", target: "" };
+                              }
+                              if (type === "replace") {
+                                return { type: "replace", field, from: "", to: "" };
+                              }
+                              if (type === "number" || type === "lowercase" || type === "uppercase") {
+                                return { type, field, target: "" };
+                              }
+                              return { type: "prefix", field, value: "", target: "" };
+                            }),
+                          );
+                        }}
+                        className={inputClass}
+                      >
+                        <option value="regex">Regex extract</option>
+                        <option value="number">Ambil angka</option>
+                        <option value="replace">Ganti teks</option>
+                        <option value="prefix">Tambah depan</option>
+                        <option value="suffix">Tambah belakang</option>
+                        <option value="lowercase">Huruf kecil</option>
+                        <option value="uppercase">Huruf besar</option>
+                        <option value="template">Template kolom baru</option>
+                      </select>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setTransforms((prev) => prev.filter((_, i) => i !== index))}
+                      className="mb-2 text-sm text-subtle transition-colors hover:text-ink"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+
+                  {transform.type === "template" ? (
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label
+                          htmlFor={`transform-template-${index}`}
+                          className="block text-xs text-subtle"
+                        >
+                          Template, pakai {"{{nama_field}}"} buat isi kolom lain
+                        </label>
+                        <input
+                          id={`transform-template-${index}`}
+                          value={transform.template}
+                          onChange={(event) =>
+                            setTransforms((prev) =>
+                              prev.map((item, i) =>
+                                i === index && item.type === "template"
+                                  ? { ...item, template: event.target.value }
+                                  : item,
+                              ),
+                            )
+                          }
+                          className={inputClass}
+                          placeholder="{{title}} - {{price}}"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor={`transform-target-${index}`}
+                          className="block text-xs text-subtle"
+                        >
+                          Kolom tujuan
+                        </label>
+                        <input
+                          id={`transform-target-${index}`}
+                          value={transform.target}
+                          onChange={(event) =>
+                            setTransforms((prev) =>
+                              prev.map((item, i) =>
+                                i === index && item.type === "template"
+                                  ? { ...item, target: event.target.value }
+                                  : item,
+                              ),
+                            )
+                          }
+                          className={inputClass}
+                          placeholder="ringkasan"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label
+                          htmlFor={`transform-field-${index}`}
+                          className="block text-xs text-subtle"
+                        >
+                          Field sumber
+                        </label>
+                        <input
+                          id={`transform-field-${index}`}
+                          value={"field" in transform ? transform.field : ""}
+                          onChange={(event) =>
+                            setTransforms((prev) =>
+                              prev.map((item, i) =>
+                                i === index && "field" in item
+                                  ? { ...item, field: event.target.value }
+                                  : item,
+                              ),
+                            )
+                          }
+                          className={inputClass}
+                          placeholder="price"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor={`transform-target-${index}`}
+                          className="block text-xs text-subtle"
+                        >
+                          Kolom tujuan, kosong berarti nimpa field asal
+                        </label>
+                        <input
+                          id={`transform-target-${index}`}
+                          value={"target" in transform ? (transform.target ?? "") : ""}
+                          onChange={(event) =>
+                            setTransforms((prev) =>
+                              prev.map((item, i) =>
+                                i === index && "target" in item
+                                  ? { ...item, target: event.target.value }
+                                  : item,
+                              ),
+                            )
+                          }
+                          className={inputClass}
+                          placeholder="priceNumber"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {transform.type === "regex" && (
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label
+                          htmlFor={`transform-pattern-${index}`}
+                          className="block text-xs text-subtle"
+                        >
+                          Pattern regex, group pertama yang diambil
+                        </label>
+                        <input
+                          id={`transform-pattern-${index}`}
+                          value={transform.pattern}
+                          onChange={(event) =>
+                            setTransforms((prev) =>
+                              prev.map((item, i) =>
+                                i === index && item.type === "regex"
+                                  ? { ...item, pattern: event.target.value }
+                                  : item,
+                              ),
+                            )
+                          }
+                          className={inputClass}
+                          placeholder="([\d.]+)"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor={`transform-group-${index}`}
+                          className="block text-xs text-subtle"
+                        >
+                          Nomor group, default 1
+                        </label>
+                        <input
+                          id={`transform-group-${index}`}
+                          type="number"
+                          min={1}
+                          max={99}
+                          value={transform.group ?? 1}
+                          onChange={(event) =>
+                            setTransforms((prev) =>
+                              prev.map((item, i) =>
+                                i === index && item.type === "regex"
+                                  ? { ...item, group: Number(event.target.value) || 1 }
+                                  : item,
+                              ),
+                            )
+                          }
+                          className={inputClass}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {transform.type === "replace" && (
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label
+                          htmlFor={`transform-from-${index}`}
+                          className="block text-xs text-subtle"
+                        >
+                          Teks yang dicari
+                        </label>
+                        <input
+                          id={`transform-from-${index}`}
+                          value={transform.from}
+                          onChange={(event) =>
+                            setTransforms((prev) =>
+                              prev.map((item, i) =>
+                                i === index && item.type === "replace"
+                                  ? { ...item, from: event.target.value }
+                                  : item,
+                              ),
+                            )
+                          }
+                          className={inputClass}
+                          placeholder="In stock"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor={`transform-to-${index}`} className="block text-xs text-subtle">
+                          Teks pengganti
+                        </label>
+                        <input
+                          id={`transform-to-${index}`}
+                          value={transform.to}
+                          onChange={(event) =>
+                            setTransforms((prev) =>
+                              prev.map((item, i) =>
+                                i === index && item.type === "replace"
+                                  ? { ...item, to: event.target.value }
+                                  : item,
+                              ),
+                            )
+                          }
+                          className={inputClass}
+                          placeholder="Tersedia"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {(transform.type === "prefix" || transform.type === "suffix") && (
+                    <div className="mt-3">
+                      <label
+                        htmlFor={`transform-value-${index}`}
+                        className="block text-xs text-subtle"
+                      >
+                        {transform.type === "prefix" ? "Teks depan" : "Teks belakang"}
+                      </label>
+                      <input
+                        id={`transform-value-${index}`}
+                        value={transform.value}
+                        onChange={(event) =>
+                          setTransforms((prev) =>
+                            prev.map((item, i) =>
+                              i === index && "value" in item
+                                ? { ...item, value: event.target.value }
+                                : item,
+                            ),
+                          )
+                        }
+                        className={inputClass}
+                        placeholder={transform.type === "prefix" ? "Rp" : " /pcs"}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       ) : (

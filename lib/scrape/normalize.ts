@@ -8,6 +8,7 @@ import type {
   ScheduleConfig,
   SitemapSourceConfig,
   SourceType,
+  Transform,
 } from "./types";
 
 // Config job lama (sebelum mode jadi wajib) atau config dari luar bisa saja
@@ -61,5 +62,6 @@ export function normalizeConfig(config: unknown): ExtractConfig {
     ...shared,
     api: raw.api as ApiSourceConfig | undefined,
     sitemap: raw.sitemap as SitemapSourceConfig | undefined,
+    transforms: Array.isArray(raw.transforms) ? (raw.transforms as Transform[]) : undefined,
   };
 }

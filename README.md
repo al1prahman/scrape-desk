@@ -32,10 +32,11 @@ This is not a personal scraping script: it has multi-user support, job managemen
 - **Platform**
   - Email/password auth with Supabase, per-user Row Level Security on every table
   - Job CRUD, run history, realtime status updates on the dashboard via Supabase Realtime
-  - Public REST API with hashed API keys (sha256, plaintext shown once at creation)
+  - Public REST API with hashed API keys (sha256, plaintext shown once at creation), OpenAPI spec in docs/openapi.yaml
   - CSV/JSON export
   - Daily run quota per user (default 50, override with DAILY_RUN_QUOTA), enforced on dashboard and API, usage shown on the overview page
-  - Built-in docs page at `/docs`
+  - Post-extraction data transforms: regex extract, number coercion, replace, prefix/suffix, case, and template columns
+  - Built-in docs page at `/docs` and a full tutorial at `/tutorial`
 
 ## Tech Stack
 
@@ -188,14 +189,14 @@ The stealth init script raises the minimum headless-detection bar (webdriver fla
 
 ## Testing
 
-65 unit tests across 9 files, run with `npm test`:
+78 unit tests across 10 files, run with `npm test`:
 
 ```
 npm test        # run once
 npm run test:watch  # watch mode
 ```
 
-Coverage: config normalization (including legacy rows without a mode field), column resolution, container and column extraction, set-based diffing, API dot-path mapping and pagination, RSS/Atom parsing, sitemap index recursion, zod validation boundaries, and domain rate limiting.
+Coverage: config normalization (including legacy rows without a mode field), column resolution, container and column extraction, data transforms, set-based diffing, API dot-path mapping and pagination, RSS/Atom parsing, sitemap index recursion, zod validation boundaries, and domain rate limiting.
 
 End-to-end verified against live targets:
 
@@ -214,16 +215,30 @@ End-to-end verified against live targets:
 - Proxy rotation: verified plumbing via forced `ERR_PROXY_CONNECTION_FAILED` on a dead proxy
 - Change detection: identical re-runs produce 0 added, 0 removed, 20 unchanged; an edited row is detected as 1 added plus 1 removed
 - Quota: daily count via jobs join verified correct
+- Transforms: number coercion strips currency symbols (51.77 from £51.77) and template columns combine transformed values, verified end to end
 
 ## Deployment
 
 See [DEPLOY.md](DEPLOY.md). Short version: web on Vercel (zero-config), worker on a VPS with PM2 (`ecosystem.config.cjs` included). The two processes share one Supabase database and communicate through the pg-boss queue.
 
-## Roadmap V3
+Docker Compose is also available for local full-stack runs:
+
+```
+docker compose up --build
+```
+
+This builds the web image (Next.js standalone output) and the worker image (Playwright base with Chromium preinstalled). Both read credentials from `.env.local`.
+
+## API Specification
+
+The public API is documented as an OpenAPI 3.0 spec in `docs/openapi.yaml`. Import it into Postman, Insomnia, or Swagger UI for an interactive reference.
+
+## Roadmap V4
 
 - True change detection with a user-defined stable key (row identity instead of content hash)
 - Stripe billing on top of the existing quota metering
 - Quota tiers per plan
+- Screenshot capture per run as visual evidence
 
 ## License
 

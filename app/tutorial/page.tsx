@@ -1,28 +1,28 @@
 import Link from "next/link";
 
 const sections = [
-  { id: "konsep", label: "Konsep dasar" },
-  { id: "job-pertama", label: "Job pertama" },
-  { id: "sumber", label: "Sumber data" },
-  { id: "ekstraksi", label: "Mode ekstraksi" },
-  { id: "navigasi", label: "Navigasi" },
-  { id: "akses", label: "Akses situs sulit" },
-  { id: "otomasi", label: "Otomasi" },
-  { id: "reliability", label: "Reliability" },
-  { id: "perubahan", label: "Change detection" },
-  { id: "kuota", label: "Kuota" },
-  { id: "api", label: "API dan export" },
-  { id: "resep", label: "Resep lengkap" },
+  { id: "konsep", label: "1. Konsep dasar" },
+  { id: "daftar", label: "2. Daftar dan login" },
+  { id: "job-pertama", label: "3. Job pertama" },
+  { id: "scraping", label: "4. Cara scraping" },
+  { id: "ai-mode", label: "5. AI mode" },
+  { id: "cron", label: "6. Cron job" },
+  { id: "webhook", label: "7. Webhook" },
+  { id: "transform", label: "8. Transformasi data" },
+  { id: "perubahan", label: "9. Change detection" },
+  { id: "api", label: "10. Cara pakai API" },
+  { id: "export", label: "11. Export hasil" },
+  { id: "troubleshooting", label: "12. Troubleshooting" },
 ];
 
 export default function TutorialPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-16">
       <p className="font-mono text-xs uppercase tracking-widest text-subtle">scrape-desk</p>
-      <h1 className="mt-4 text-3xl font-semibold tracking-tight">Tutorial</h1>
+      <h1 className="mt-4 text-3xl font-semibold tracking-tight">Tutorial Lengkap</h1>
       <p className="mt-3 text-muted">
-        Panduan lengkap pakai ScrapeDesk, dari bikin job pertama sampai otomasi penuh. Semua fitur
-        ada di sini.
+        Panduan step by step pakai ScrapeDesk dari nol sampai mahir. Setiap section bisa dibaca
+        sendiri-sendiri, tapi kalau baru pertama kali ikuti urutan dari atas.
       </p>
 
       <nav className="mt-8 flex flex-wrap gap-2">
@@ -38,53 +38,117 @@ export default function TutorialPage() {
       </nav>
 
       <section id="konsep" className="mt-12">
-        <h2 className="text-lg font-medium">Konsep dasar</h2>
+        <h2 className="text-lg font-medium">1. Konsep dasar</h2>
         <p className="mt-2 text-sm text-muted">
-          Tiga kata kunci: job, run, results. Job adalah resep scraping: target URL, sumber data,
-          aturan ekstraksi. Run adalah satu eksekusi job. Results adalah baris data hasil satu run.
-          Satu job bisa di-run berkali-kali, tiap run punya hasil terpisah dan bisa dibandingkan.
+          ScrapeDesk punya tiga objek utama. Pahami ini dulu, sisanya gampang.
+        </p>
+        <div className="mt-4 space-y-3">
+          <div className="rounded-card border border-line bg-surface p-4">
+            <span className="text-sm font-medium">Job</span>
+            <p className="mt-1 text-sm text-muted">
+              Resep scraping. Isinya: target URL, sumber data, aturan ekstraksi, dan opsi tambahan
+              kayak schedule atau webhook. Satu job bisa di-run berkali-kali.
+            </p>
+          </div>
+          <div className="rounded-card border border-line bg-surface p-4">
+            <span className="text-sm font-medium">Run</span>
+            <p className="mt-1 text-sm text-muted">
+              Satu eksekusi job. Punya status: queued (nunggu di antrian), running (lagi diproses
+              worker), done (berhasil), failed (gagal setelah retry).
+            </p>
+          </div>
+          <div className="rounded-card border border-line bg-surface p-4">
+            <span className="text-sm font-medium">Results</span>
+            <p className="mt-1 text-sm text-muted">
+              Baris data hasil satu run. Bisa dilihat di dashboard, diexport CSV/JSON, atau ditarik
+              lewat API.
+            </p>
+          </div>
+        </div>
+        <p className="mt-4 text-sm text-muted">
+          Alur lengkap: lo bikin job, klik Run, job masuk antrian, worker ngambil dan nge-scrape,
+          hasil masuk database, lo lihat atau tarik hasilnya.
+        </p>
+      </section>
+
+      <section id="daftar" className="mt-12">
+        <h2 className="text-lg font-medium">2. Daftar dan login</h2>
+        <p className="mt-2 text-sm text-muted">
+          Buka halaman register, isi email dan password. Setelah login lo masuk ke dashboard yang
+          nampilin overview: jumlah job, jumlah run, total rows, dan kuota harian.
+        </p>
+        <p className="mt-2 text-sm text-muted">
+          Tiap akun punya data sendiri yang terisolasi di database. Akun lo nggak bisa lihat job
+          atau hasil akun orang lain.
         </p>
       </section>
 
       <section id="job-pertama" className="mt-12">
-        <h2 className="text-lg font-medium">Job pertama</h2>
+        <h2 className="text-lg font-medium">3. Job pertama</h2>
         <p className="mt-2 text-sm text-muted">
-          Buka dashboard, klik New Job. Isi nama dan target URL, pilih sumber data dan mode
-          ekstraksi, tentukan field, simpan. Di halaman job, klik Run sekarang. Status run update
-          realtime, hasil muncul di halaman hasil run.
+          Contoh paling simpel: scraping daftar buku dari books.toscrape.com.
         </p>
-        <pre className="mt-3 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
-          {`Contoh job paling sederhana:
-
-Nama:        Books to Scrape
-Target URL:  https://books.toscrape.com/
-Sumber:      Web Page
-Mode:        CSS Selector
-Fields:      title -> article.product_pod h3 a
-             price -> article.product_pod p.price_color`}
-        </pre>
+        <ol className="mt-3 space-y-2 text-sm text-muted">
+          <li>1. Klik New Job di dashboard.</li>
+          <li>2. Isi Nama job, misal Buku latihan.</li>
+          <li>
+            3. Isi Target URL:{" "}
+            <span className="font-mono text-ink">https://books.toscrape.com/</span>
+          </li>
+          <li>4. Sumber data biarin Web Page.</li>
+          <li>5. Mode ekstraksi pilih CSS Selector.</li>
+          <li>6. Isi Container selector: article.product_pod</li>
+          <li>
+            7. Tambah dua field: title dengan selector{" "}
+            <span className="font-mono text-ink">h3 a</span>, dan price dengan selector{" "}
+            <span className="font-mono text-ink">p.price_color</span>.
+          </li>
+          <li>8. Simpan, buka halaman job, klik Run sekarang.</li>
+        </ol>
+        <p className="mt-3 text-sm text-muted">
+          Status run update realtime. Selesai, klik hasil run buat lihat 20 baris data. Itu flow
+          dasar semua job di sistem ini.
+        </p>
       </section>
 
-      <section id="sumber" className="mt-12">
-        <h2 className="text-lg font-medium">Sumber data</h2>
+      <section id="scraping" className="mt-12">
+        <h2 className="text-lg font-medium">4. Cara scraping</h2>
         <p className="mt-2 text-sm text-muted">
-          Empa sumber data dalam satu pipeline. Pilih di form New Job, form ngikutin otomatis.
+          Ada empat sumber data. Pilih di form New Job, form ngikutin otomatis.
         </p>
 
-        <h3 className="mt-6 text-sm font-medium">Web Page</h3>
+        <h3 className="mt-6 text-sm font-medium">Web Page, buat halaman HTML</h3>
         <p className="mt-1 text-sm text-muted">
-          Render halaman HTML pakai browser asli, cocok buat blog, news, listing produk, komunitas.
-          Mendukung JavaScript rendering, paginasi, infinite scroll, cookies, dan proxy.
+          Browser asli render halaman termasuk JavaScript. Cocok buat blog, news, listing produk,
+          komunitas. Tiga mode ekstraksi:
+        </p>
+        <ul className="mt-2 space-y-1 text-sm text-muted">
+          <li>
+            - CSS Selector: tiap field punya selector, baris disusun per index. Cocok buat halaman
+            di mana tiap field muncul urut dan sama banyak.
+          </li>
+          <li>
+            - Container: isi container selector, tiap elemen match jadi satu baris, field relatif di
+            dalam container. Field nggak bisa bocor antar baris. Ini cara bener buat listing page.
+          </li>
+          <li>
+            - AI Extract: tulis instruksi bahasa natural, LLM yang ekstrak. Cocok buat halaman
+            berantakan.
+          </li>
+        </ul>
+        <p className="mt-2 text-sm text-muted">
+          Navigasi: paginasi dua mode (tombol next atau URL pattern dengan tanda {"{page}"}) dan
+          infinite scroll. Bisa dikombinasi. Akses situs susah: cookies buat halaman butuh login,
+          proxy dirotasi per halaman, dan stealth init script buat ngangkat ambang deteksi headless.
         </p>
 
-        <h3 className="mt-6 text-sm font-medium">JSON API</h3>
+        <h3 className="mt-6 text-sm font-medium">JSON API, buat data terstruktur</h3>
         <p className="mt-1 text-sm text-muted">
           Fetch JSON dari API manapun. Field dipetakan lewat dot path, support array index seperti
-          authors[0].name. Paginasi tiga mode: page number, cursor, dan next link. Cocok buat jurnal
-          ilmiah, Reddit, dan layanan dengan API resmi.
+          authors[0].name. Paginasi tiga mode: page number, cursor, next link.
         </p>
         <pre className="mt-3 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
-          {`Contoh: jurnal dari OpenAlex
+          {`Contoh jurnal dari OpenAlex:
 
 Target URL:  https://api.openalex.org/works?search=quantum&per-page=25
 Sumber:      JSON API
@@ -95,7 +159,7 @@ Fields:      title -> title
 Paginasi:    Page number, param "page", 10 halaman`}
         </pre>
         <pre className="mt-3 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
-          {`Contoh: komentar Reddit
+          {`Contoh komentar Reddit:
 
 Target URL:  https://www.reddit.com/r/programmerhumor/comments/<id>.json
 Sumber:      JSON API
@@ -105,29 +169,24 @@ Fields:      body   -> data.body
              score  -> data.score`}
         </pre>
 
-        <h3 className="mt-6 text-sm font-medium">RSS/Atom Feed</h3>
+        <h3 className="mt-6 text-sm font-medium">RSS/Atom Feed, buat berita</h3>
         <p className="mt-1 text-sm text-muted">
           Parse feed jadi kolom title, link, date, summary. Nggak perlu config ekstraksi, paling
           reliable buat berita karena hampir semua situs berita punya feed.
         </p>
         <pre className="mt-3 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
-          {`Contoh: berita BBC
-
-Target URL:  https://feeds.bbci.co.uk/news/rss.xml
+          {`Target URL:  https://feeds.bbci.co.uk/news/rss.xml
 Sumber:      RSS/Atom Feed
 Limit:       50`}
         </pre>
 
-        <h3 className="mt-6 text-sm font-medium">Sitemap Crawl</h3>
+        <h3 className="mt-6 text-sm font-medium">Sitemap Crawl, buat seluruh isi situs</h3>
         <p className="mt-1 text-sm text-muted">
-          Ambil semua URL dari sitemap.xml, termasuk sitemap index, terus scraping tiap halaman
-          pakai aturan ekstraksi web. Filter URL dan batas jumlah URL. Cocok buat ngambil seluruh
-          isi blog atau situs berita.
+          Ambil semua URL dari sitemap.xml termasuk sitemap index, terus scraping tiap halaman
+          pakai aturan web. Filter URL dan batas jumlah URL.
         </p>
         <pre className="mt-3 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
-          {`Contoh: seluruh artikel blog
-
-Target URL:  https://domain-blog.com/sitemap.xml
+          {`Target URL:  https://domain-blog.com/sitemap.xml
 Sumber:      Sitemap Crawl
 Filter URL:  /blog/
 Maks URL:    100
@@ -136,182 +195,277 @@ Fields:      title -> h1.post-title
         </pre>
       </section>
 
-      <section id="ekstraksi" className="mt-12">
-        <h2 className="text-lg font-medium">Mode ekstraksi</h2>
-
-        <h3 className="mt-6 text-sm font-medium">CSS Selector</h3>
-        <p className="mt-1 text-sm text-muted">
-          Tiap field punya selector sendiri, baris disusun per index. Cocok buat halaman di mana
-          tiap field muncul urut dan sama banyak.
+      <section id="ai-mode" className="mt-12">
+        <h2 className="text-lg font-medium">5. AI mode, cara pakai</h2>
+        <p className="mt-2 text-sm text-muted">
+          AI mode cocok buat halaman yang selector-nya nggak stabil atau strukturnya berantakan.
+          Alih-alih nulis selector, lo tulis instruksi bahasa natural dan schema field yang mau
+          diambil.
         </p>
-
-        <h3 className="mt-6 text-sm font-medium">Container</h3>
-        <p className="mt-1 text-sm text-muted">
-          Isi container selector, tiap elemen yang match jadi satu baris, field diekstrak relatif di
-          dalam container. Field nggak bisa bocor antar baris. Ini cara bener buat listing page.
+        <p className="mt-2 text-sm text-muted">Cara pakai:</p>
+        <ol className="mt-2 space-y-2 text-sm text-muted">
+          <li>1. Di form New Job, pilih mode ekstraksi AI Extract.</li>
+          <li>
+            2. Tulis Instruksi ekstraksi, misal &quot;Ambil nama produk, harga, dan rating untuk
+            setiap item di halaman ini&quot;.
+          </li>
+          <li>
+            3. Tambah Schema output: tiap field punya nama dan deskripsi. Misal nama price dengan
+            deskripsi &quot;harga dalam rupiah, angka saja&quot;.
+          </li>
+          <li>4. Simpan dan run seperti biasa.</li>
+        </ol>
+        <p className="mt-2 text-sm text-muted">
+          Yang terjadi di belakang layar: halaman di-render, HTML dibersihin jadi markdown (buang
+          navigasi, footer, iklan), markdown dikirim ke LLM bersama instruksi dan schema, LLM balik
+          JSON, JSON diparse jadi rows.
         </p>
+        <p className="mt-2 text-sm text-muted">
+          Butuh endpoint LLM OpenAI-compatible. Set env LLM_BASE_URL, LLM_API_KEY, dan LLM_MODEL.
+          Bisa colok ke provider mana pun, termasuk model lokal. Kalau selector stabil, CSS mode
+          lebih cepat dan lebih murah. AI mode itu buat kasus yang CSS nggak sanggup.
+        </p>
+      </section>
+
+      <section id="cron" className="mt-12">
+        <h2 className="text-lg font-medium">6. Cron job, cara pakai</h2>
+        <p className="mt-2 text-sm text-muted">
+          Cron bikin job jalan otomatis sesuai jadwal. Di form job, ada field Schedule cron di
+          section Otomasi.
+        </p>
+        <p className="mt-2 text-sm text-muted">Format cron 5 field, dipisah spasi:</p>
         <pre className="mt-3 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
-          {`Container:   article.product_pod
-Fields:      title -> h3 a
-             price -> p.price_color`}
+          {`menit  jam  hari-dalam-bulan  bulan  hari-dalam-minggu
+
+0 9 * * *      tiap hari jam 9 pagi
+*/30 * * * *   tiap 30 menit
+0 8 * * 1      tiap Senin jam 8 pagi
+0 0 1 * *      tanggal 1 tiap bulan jam 12 malam`}
         </pre>
-
-        <h3 className="mt-6 text-sm font-medium">AI Extract</h3>
-        <p className="mt-1 text-sm text-muted">
-          Tulis instruksi bahasa natural plus schema field, LLM baca konten halaman dan ekstrak
-          sesuai instruksi. Cocok buat halaman berantakan yang selector-nya nggak stabil. Butuh
-          endpoint OpenAI-compatible, bisa colok ke provider mana pun.
+        <p className="mt-2 text-sm text-muted">
+          Isi cron, simpan job, sistem otomatis jalanin sesuai jadwal. Tiap run terjadwal bikin run
+          row baru dengan trigger schedule. Kalau cron dihapus dari config job, rantai jadwal
+          berhenti sendiri, nggak ada run nyangkut.
+        </p>
+        <p className="mt-2 text-sm text-muted">
+          Ingat kuota: run terjadwal tetap dihitung ke kuota harian 50 run. Kalau kuota habis, run
+          balik error 429.
         </p>
       </section>
 
-      <section id="navigasi" className="mt-12">
-        <h2 className="text-lg font-medium">Navigasi</h2>
+      <section id="webhook" className="mt-12">
+        <h2 className="text-lg font-medium">7. Webhook, cara pakai</h2>
         <p className="mt-2 text-sm text-muted">
-          Buat sumber web, dua cara jalan keluar halaman listing:
+          Webhook bikin sistem ngabarin URL lo setiap run selesai. Isi field Webhook URL di section
+          Otomasi, misal https://domain-lo.com/webhook.
         </p>
-        <p className="mt-2 text-sm text-muted">
-          Paginasi tombol next: kasih selector tombol next, engine klik sampai habis atau maksimal
-          halaman tercapai. Paginasi URL pattern: kasih pattern dengan tanda {"{page}"}, engine ganti
-          nomor halaman otomatis.
-        </p>
-        <p className="mt-2 text-sm text-muted">
-          Infinite scroll: centang opsi ini, engine scroll ke bawah sampai tinggi halaman stabil atau
-          maksimal scroll tercapai. Bisa dikombinasi dengan paginasi.
-        </p>
-      </section>
-
-      <section id="akses" className="mt-12">
-        <h2 className="text-lg font-medium">Akses situs susah</h2>
-        <p className="mt-2 text-sm text-muted">
-          Cookies: buat halaman butuh login, login dulu di browser, copy cookies, paste ke textarea
-          Cookies di form job dengan format name=value per baris. Cookies dikirim ke halaman target.
-        </p>
-        <p className="mt-2 text-sm text-muted">
-          Proxies: satu per baris format http://user:pass@ip:port, dirotasi round-robin per halaman.
-          Berguna buat situs yang rate limit per IP.
-        </p>
-        <p className="mt-2 text-sm text-muted">
-          Stealth: init script ngangkat ambang deteksi headless minimum. Jujur ya, ini bukan
-          anti-bot sempurna. Cloudflare challenge kelas berat dan Google reCAPTCHA masih bisa nolak.
-          Buat target segitu, pakai sumber API atau feed sebagai gantinya.
-        </p>
-      </section>
-
-      <section id="otomasi" className="mt-12">
-        <h2 className="text-lg font-medium">Otomasi</h2>
-        <p className="mt-2 text-sm text-muted">
-          Schedule cron: isi cron 5 field di form job, job jalan otomatis sesuai jadwal. Rantai
-          schedule berhenti sendiri kalau schedule dihapus dari config. Contoh: 0 9 * * * artinya
-          tiap hari jam 9 pagi.
-        </p>
-        <p className="mt-2 text-sm text-muted">
-          Webhook: isi URL webhook, sistem POST JSON ke URL itu setiap run selesai, berisi event,
-          jobId, runId, status, rowCount, dan error kalau ada. Kalau environment WEBHOOK_SECRET
-          diset, payload ditandatangani HMAC-SHA256 dan dikirim di header
-          X-ScrapeDesk-Signature, jadi receiver bisa verifikasi payload beneran dari sistem ini.
-        </p>
+        <p className="mt-2 text-sm text-muted">Setiap run selesai, sistem POST JSON ke URL itu:</p>
         <pre className="mt-3 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
           {`{
   "event": "run.completed",
-  "jobId": "uuid",
-  "runId": "uuid",
+  "jobId": "uuid-job",
+  "runId": "uuid-run",
   "status": "done",
   "rowCount": 20,
   "error": null,
   "finishedAt": "2026-10-31T10:00:00.000Z"
 }`}
         </pre>
+        <p className="mt-2 text-sm text-muted">
+          Verifikasi tanda tangan: kalau environment WEBHOOK_SECRET diset, payload ditandatangani
+          HMAC-SHA256 dan dikirim di header X-ScrapeDesk-Signature dengan format sha256=hex. Buat
+          verifikasi di receiver, hitung HMAC-SHA256 dari raw body pakai secret yang sama, bandingin
+          hasilnya.
+        </p>
+        <pre className="mt-3 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
+          {`// Contoh verifikasi di Node.js
+import { createHmac } from "node:crypto";
+
+const expected = createHmac("sha256", process.env.WEBHOOK_SECRET)
+  .update(rawBody)
+  .digest("hex");
+const received = req.headers["x-scrapedesk-signature"]
+  ?.replace("sha256=", "");
+if (expected !== received) return res.status(401).end();`}
+        </pre>
       </section>
 
-      <section id="reliability" className="mt-12">
-        <h2 className="text-lg font-medium">Reliability</h2>
+      <section id="transform" className="mt-12">
+        <h2 className="text-lg font-medium">8. Transformasi data, cara pakai</h2>
         <p className="mt-2 text-sm text-muted">
-          Retry otomatis: run yang gagal langsung di-retry dua kali dengan jeda menaik, 30 detik
-          lalu 60 detik. Attempt terakhir yang menentukan status failed, jadi error sementara kayak
-          jaringan atau situs down nggak langsung bikin run mati.
+          Transform dijalanin berurutan setelah ekstraksi, sebelum hasil disimpan. Ada di form job
+          mode CSS, section Transformasi data. Delapan jenis:
         </p>
+        <div className="mt-3 space-y-2 text-sm text-muted">
+          <p>
+            - Regex extract: narik bagian teks pakai pola regex, misal angka dari &quot;£51.77&quot;.
+          </p>
+          <p>- Ambil angka: buang simbol mata uang dan separator, hasil angka bersih.</p>
+          <p>
+            - Ganti teks: cari dan ganti, misal &quot;In stock&quot; jadi &quot;Tersedia&quot;.
+          </p>
+          <p>- Tambah depan atau belakang: nambah teks di awal atau akhir nilai.</p>
+          <p>- Huruf kecil atau besar: normalisasi case.</p>
+          <p>
+            - Template kolom baru: bikin kolom baru dari kolom lain pakai tanda{" "}
+            {"{{nama_field}}"}.
+          </p>
+        </div>
         <p className="mt-2 text-sm text-muted">
-          Politeness per domain: sistem nggak nembak domain yang sama lebih cepat dari
-          DOMAIN_DELAY_MS, default 1 detik. Ini ngurangin risiko kena ban dan sopan ke server
-          target.
+          Tiap transform punya field sumber dan kolom tujuan. Kolom tujuan kosong berarti nimpa field
+          asal, diisi berarti bikin kolom baru dan asal tetap ada. Transform berurutan, jadi
+          transform kedua bisa pakai hasil transform pertama.
         </p>
+        <pre className="mt-3 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
+          {`Contoh: harga £51.77 mau jadi kolom angka dan label siap pakai
+
+Transform 1: Ambil angka, field price, target priceNumber
+Transform 2: Template "{{title}} - {{priceNumber}}", target kartu
+
+Hasil: title       = "A Light in the ..."
+       price       = "£51.77"
+       priceNumber = "51.77"
+       kartu       = "A Light in the ... - 51.77"`}
+        </pre>
       </section>
 
       <section id="perubahan" className="mt-12">
-        <h2 className="text-lg font-medium">Change detection</h2>
+        <h2 className="text-lg font-medium">9. Change detection</h2>
         <p className="mt-2 text-sm text-muted">
-          Halaman hasil run menampilkan diff terhadap run sebelumnya yang selesai: berapa baris
-          baru, hilang, dan sama, plus contoh barisnya. Baris yang berubah muncul sebagai satu
-          hilang plus satu baru, itu semantics set-diff yang jujur. Berguna buat monitoring harga,
-          stok, atau konten.
+          Halaman hasil run nampilin diff terhadap run sebelumnya yang selesai: berapa baris baru,
+          hilang, dan sama, plus contoh barisnya. Baris yang berubah muncul sebagai satu hilang plus
+          satu baru, itu semantics set-diff yang jujur.
         </p>
-      </section>
-
-      <section id="kuota" className="mt-12">
-        <h2 className="text-lg font-medium">Kuota</h2>
         <p className="mt-2 text-sm text-muted">
-          Tiap akun dibatasi 50 run per hari, reset tengah malam UTC. Pemakaian tampil di halaman
-          overview dashboard. Kalau habis, trigger run balik error 429 QUOTA_EXCEEDED.
+          Berguna buat monitoring: harga kompetitor turun, stok habis, artikel baru publish, komentar
+          baru di thread. Kombinasikan dengan schedule cron dan webhook buat alerting otomatis.
         </p>
       </section>
 
       <section id="api" className="mt-12">
-        <h2 className="text-lg font-medium">API dan export</h2>
+        <h2 className="text-lg font-medium">10. Cara pakai API</h2>
         <p className="mt-2 text-sm text-muted">
-          Bikin API key di halaman API Keys, plaintext cuma ditampil sekali, disimpan sebagai hash.
-          Pakai key itu buat tarik hasil dari aplikasi lain:
+          API dipakai buat tarik hasil dari aplikasi lain atau script. Buka halaman API Keys, klik
+          create key, plaintext cuma ditampil sekali. Simpan baik-baik.
         </p>
-        <pre className="mt-3 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
-          {`# List job
-curl https://domain-lo.com/api/v1/jobs \\
-  -H "Authorization: Bearer <api-key>"
-
-# Trigger run
-curl -X POST https://domain-lo.com/api/v1/jobs/<id>/run \\
-  -H "Authorization: Bearer <api-key>"
-
-# Ambil hasil, JSON atau CSV
-curl "https://domain-lo.com/api/v1/jobs/<id>/results" \\
-  -H "Authorization: Bearer <api-key>"
-curl "https://domain-lo.com/api/v1/jobs/<id>/results?format=csv" \\
-  -H "Authorization: Bearer <api-key>"`}
-        </pre>
         <p className="mt-2 text-sm text-muted">
-          Dokumentasi endpoint lengkap ada di halaman{" "}
-          <Link href="/docs" className="underline">
-            API Docs
-          </Link>
-          .
+          Semua request butuh header Authorization: Bearer dengan key itu.
+        </p>
+
+        <h3 className="mt-6 text-sm font-medium">List job</h3>
+        <pre className="mt-2 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
+          {`curl https://domain-lo.com/api/v1/jobs \\
+  -H "Authorization: Bearer sk_live_xxx"`}
+        </pre>
+
+        <h3 className="mt-6 text-sm font-medium">Bikin job</h3>
+        <pre className="mt-2 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
+          {`curl -X POST https://domain-lo.com/api/v1/jobs \\
+  -H "Authorization: Bearer sk_live_xxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "name": "Harga kompetitor",
+    "targetUrl": "https://toko.com/produk",
+    "config": {
+      "mode": "css",
+      "containerSelector": ".product",
+      "fields": [
+        { "name": "nama", "selector": "h2" },
+        { "name": "harga", "selector": ".price" }
+      ],
+      "transforms": [
+        { "type": "number", "field": "harga", "target": "hargaAngka" }
+      ]
+    }
+  }'`}
+        </pre>
+
+        <h3 className="mt-6 text-sm font-medium">Trigger run</h3>
+        <pre className="mt-2 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
+          {`curl -X POST https://domain-lo.com/api/v1/jobs/<job-id>/run \\
+  -H "Authorization: Bearer sk_live_xxx"`}
+        </pre>
+
+        <h3 className="mt-6 text-sm font-medium">Ambil hasil, JSON atau CSV</h3>
+        <pre className="mt-2 overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-xs text-ink">
+          {`# JSON
+curl "https://domain-lo.com/api/v1/jobs/<job-id>/results" \\
+  -H "Authorization: Bearer sk_live_xxx"
+
+# CSV, langsung bisa dibuka di Excel
+curl "https://domain-lo.com/api/v1/jobs/<job-id>/results?format=csv" \\
+  -H "Authorization: Bearer sk_live_xxx" \\
+  -o hasil.csv`}
+        </pre>
+
+        <h3 className="mt-6 text-sm font-medium">Error code</h3>
+        <div className="mt-2 space-y-1 text-sm text-muted">
+          <p>- 400 VALIDATION_ERROR: input nggak valid, cek pesan error.</p>
+          <p>- 401 UNAUTHORIZED: API key salah atau nggak dikirim.</p>
+          <p>- 404 NOT_FOUND: job nggak ada atau bukan milik lo.</p>
+          <p>- 429 QUOTA_EXCEEDED: kuota harian habis, reset tengah malam UTC.</p>
+          <p>- 500 INTERNAL_ERROR: error server.</p>
+        </div>
+        <p className="mt-2 text-sm text-muted">
+          Spesifikasi lengkap format OpenAPI ada di file docs/openapi.yaml di repo, bisa di-import ke
+          Postman atau Swagger UI.
         </p>
       </section>
 
-      <section id="resep" className="mt-12">
-        <h2 className="text-lg font-medium">Resep lengkap</h2>
-
-        <h3 className="mt-6 text-sm font-medium">Monitor harga kompetitor</h3>
-        <p className="mt-1 text-sm text-muted">
-          Job web dengan container mode di halaman produk, paginasi URL pattern kalau listing
-          multipage, schedule cron tiap pagi, webhook ke Telegram atau Slack. Buka halaman hasil
-          run buat lihat perubahan harga lewat change detection.
+      <section id="export" className="mt-12">
+        <h2 className="text-lg font-medium">11. Export hasil</h2>
+        <p className="mt-2 text-sm text-muted">
+          Dua cara. Dari dashboard: buka halaman hasil run, ada tombol download CSV. Dari API: tambah
+          query ?format=csv seperti di section 10. CSV-nya kompatibel Excel, nilai yang mengandung
+          koma atau baris baru di-quote otomatis.
         </p>
+      </section>
 
-        <h3 className="mt-6 text-sm font-medium">Riset jurnal</h3>
-        <p className="mt-1 text-sm text-muted">
-          Job API ke OpenAlex atau Semantic Scholar dengan items path dan paginasi page number.
-          Export CSV buat dibawa ke spreadsheet. Nggak ada risiko captcha karena API resmi.
-        </p>
-
-        <h3 className="mt-6 text-sm font-medium">Agregator berita</h3>
-        <p className="mt-1 text-sm text-muted">
-          Satu job feed per situs berita, atau sitemap crawl kalau butuh isi artikel lengkap bukan
-          cuma headline. Schedule tiap jam, webhook ke database atau notifikasi.
-        </p>
-
-        <h3 className="mt-6 text-sm font-medium">Monitoring komunitas</h3>
-        <p className="mt-1 text-sm text-muted">
-          Job API ke Reddit JSON endpoint dengan items path ke children komentar. Change detection
-          ngasih tau kapan ada komentar baru di thread yang dipantau.
-        </p>
+      <section id="troubleshooting" className="mt-12">
+        <h2 className="text-lg font-medium">12. Troubleshooting</h2>
+        <div className="mt-3 space-y-3 text-sm text-muted">
+          <div>
+            <span className="font-medium text-ink">Run nyangkut di status queued.</span>
+            <p>
+              Worker nggak jalan atau mati. Cek proses worker, start lagi dengan npm run worker.
+              Worker dan web harus jalan barengan.
+            </p>
+          </div>
+          <div>
+            <span className="font-medium text-ink">Run done tapi 0 rows.</span>
+            <p>
+              Selector nggak match halaman, atau halaman target berubah struktur. Coba buka URL
+              target di browser, inspect elemen, update selector. Kalau situs kasih halaman captcha,
+              hasilnya juga kosong karena konten asli nggak ke-render.
+            </p>
+          </div>
+          <div>
+            <span className="font-medium text-ink">Run failed dengan error proxy.</span>
+            <p>Proxy di config mati atau nggak bisa connect. Cek daftar proxy, ganti yang aktif.</p>
+          </div>
+          <div>
+            <span className="font-medium text-ink">Error 429 pas trigger run.</span>
+            <p>
+              Kuota harian habis. Lihat sisa kuota di halaman overview, tunggu reset tengah malam
+              UTC, atau naikin limit lewat env DAILY_RUN_QUOTA.
+            </p>
+          </div>
+          <div>
+            <span className="font-medium text-ink">AI mode balik hasil aneh.</span>
+            <p>
+              Instruksi kurang spesifik atau schema ambigu. Perjelas deskripsi tiap field, misal
+              &quot;harga dalam rupiah, angka saja tanpa Rp&quot;.
+            </p>
+          </div>
+          <div>
+            <span className="font-medium text-ink">Halaman lama error.</span>
+            <p>
+              Kalau ada job yang dibuat sebelum fitur tertentu ada, config-nya bisa kurang field.
+              Sistem normalize config otomatis, tapi kalau tetap error, edit dan simpan ulang job-nya
+              biar config di-refresh.
+            </p>
+          </div>
+        </div>
       </section>
 
       <section className="mt-12">
@@ -321,7 +475,7 @@ curl "https://domain-lo.com/api/v1/jobs/<id>/results?format=csv" \\
           <Link href="/dashboard/jobs/new" className="underline">
             New Job
           </Link>{" "}
-          dan coba salah satu resep di atas. Kalau butuh detail teknis endpoint, halaman{" "}
+          dan coba bikin job pertama lo. Kalau butuh detail teknis endpoint, halaman{" "}
           <Link href="/docs" className="underline">
             API Docs
           </Link>{" "}

@@ -6,6 +6,7 @@ import { scrapeFeed } from "./feed-source";
 import { fetchSitemapUrls } from "./sitemap-source";
 import { normalizeConfig } from "./normalize";
 import { respectDomainDelay } from "./rate-limit";
+import { applyTransforms } from "./transforms";
 import type { CssExtractConfig, ExtractConfig, ScrapedRow } from "./types";
 
 const NAV_TIMEOUT_MS = 30_000;
@@ -162,6 +163,7 @@ export async function scrapeJob(url: string, rawConfig: ExtractConfig): Promise<
   // Normalize sekali di entry, semua consumer di bawah aman dari config legacy.
   const config = normalizeConfig(rawConfig);
   const sourceType = config.sourceType ?? "web";
+  const transforms = config.mode === "css" ? (config.transforms ?? []) : [];
 
   if (sourceType === "api" && config.mode === "css") {
     const { rows } = await scrapeApi(url, {
@@ -170,7 +172,7 @@ export async function scrapeJob(url: string, rawConfig: ExtractConfig): Promise<
       cookies: config.cookies,
       api: config.api,
     });
-    return rows;
+    return applyTransforms(rows, transforms);
   }
 
   if (sourceType === "feed") {
@@ -190,7 +192,10 @@ export async function scrapeJob(url: string, rawConfig: ExtractConfig): Promise<
       if (cssConfig.limit && allRows.length >= cssConfig.limit) break;
     }
 
-    return cssConfig.limit ? allRows.slice(0, cssConfig.limit) : allRows;
+    return applyTransforms(
+      cssConfig.limit ? allRows.slice(0, cssConfig.limit) : allRows,
+      transforms,
+    );
   }
 
   const htmls = await collectWithRetry(url, config);
@@ -205,5 +210,6 @@ export async function scrapeJob(url: string, rawConfig: ExtractConfig): Promise<
     allRows.push(...rows);
   }
 
-  return config.limit ? allRows.slice(0, config.limit) : allRows;
+  const limited = config.limit ? allRows.slice(0, config.limit) : allRows;
+  return applyTransforms(limited, transforms);
 }

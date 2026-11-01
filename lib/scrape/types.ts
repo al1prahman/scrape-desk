@@ -51,6 +51,18 @@ export type SitemapSourceConfig = {
   maxUrls?: number;
 };
 
+// Transform post-ekstraksi, dijalanin berurutan setelah rows terkumpul.
+// Regex dipakai buat narik angka dari teks, template buat bikin kolom baru.
+export type Transform =
+  | { type: "regex"; field: string; pattern: string; group?: number; target?: string }
+  | { type: "replace"; field: string; from: string; to: string }
+  | { type: "number"; field: string; target?: string }
+  | { type: "prefix"; field: string; value: string; target?: string }
+  | { type: "suffix"; field: string; value: string; target?: string }
+  | { type: "lowercase"; field: string; target?: string }
+  | { type: "uppercase"; field: string; target?: string }
+  | { type: "template"; template: string; target: string };
+
 export type CssExtractConfig = {
   mode: "css";
   fields: ExtractField[];
@@ -64,6 +76,7 @@ export type CssExtractConfig = {
   sourceType?: SourceType;
   api?: ApiSourceConfig;
   sitemap?: SitemapSourceConfig;
+  transforms?: Transform[];
 };
 
 export type AiExtractConfig = {
