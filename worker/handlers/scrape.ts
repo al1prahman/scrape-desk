@@ -1,4 +1,4 @@
-import type { Job as BossJob } from "pg-boss";
+import type { JobWithMetadata as BossJob } from "pg-boss";
 import { scrapeJob } from "@/lib/scrape/engine";
 import {
   createRunForJob,
@@ -12,7 +12,7 @@ import { notifyWebhook } from "@/lib/webhooks/notify";
 import { scheduleNextRun } from "@/lib/queue/schedule";
 import type { ScrapeJobData } from "@/lib/queue/enqueue";
 
-async function processScrape(data: ScrapeJobData) {
+async function processScrape(data: ScrapeJobData, attempt: { retryCount: number; retryLimit: number }) {
   const { jobId } = data;
 
   const jobRow = await getJobForSystem(jobId);
@@ -47,6 +47,12 @@ async function processScrape(data: ScrapeJobData) {
   } catch (error) {
     errorMessage = error instanceof Error ? error.message : "Scrape gagal";
     await markRunFailed(runId, errorMessage);
+
+    // Masih ada sisa attempt: lempar ulang biar pg-boss retry dengan backoff.
+    // Attempt terakhir yang nge-mark failed di atas.
+    if (attempt.retryCount < attempt.retryLimit) {
+      throw error;
+    }
   }
 
   if (jobRow.config.webhookUrl) {
@@ -71,6 +77,9 @@ async function processScrape(data: ScrapeJobData) {
 // pg-boss mengirim job dalam batch array, bukan satu per satu.
 export async function handleScrapeJob(jobs: BossJob<ScrapeJobData>[]) {
   for (const job of jobs) {
-    await processScrape(job.data);
+    await processScrape(job.data, {
+      retryCount: job.retryCount ?? 0,
+      retryLimit: job.retryLimit ?? 0,
+    });
   }
 }

@@ -8,7 +8,9 @@ async function main() {
 
   await boss.start();
   await boss.createQueue(SCRAPE_QUEUE);
-  await boss.work(SCRAPE_QUEUE, handleScrapeJob);
+  // includeMetadata biar handler bisa baca retryCount dan retryLimit,
+  // dipakai buat memutuskan kapan run di-mark failed vs dilempar ulang.
+  await boss.work(SCRAPE_QUEUE, { includeMetadata: true }, handleScrapeJob);
 
   console.log(`[worker] listening on queue ${SCRAPE_QUEUE}`);
 }
