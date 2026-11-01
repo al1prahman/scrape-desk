@@ -4,6 +4,7 @@ import { extractWithAi } from "./ai-extract";
 import { scrapeApi } from "./api-source";
 import { scrapeFeed } from "./feed-source";
 import { fetchSitemapUrls } from "./sitemap-source";
+import { normalizeConfig } from "./normalize";
 import type { CssExtractConfig, ExtractConfig, ScrapedRow } from "./types";
 
 const NAV_TIMEOUT_MS = 30_000;
@@ -153,7 +154,9 @@ async function collectWithRetry(url: string, config: ExtractConfig): Promise<str
   throw lastError instanceof Error ? lastError : new Error("Gagal ambil halaman");
 }
 
-export async function scrapeJob(url: string, config: ExtractConfig): Promise<ScrapedRow[]> {
+export async function scrapeJob(url: string, rawConfig: ExtractConfig): Promise<ScrapedRow[]> {
+  // Normalize sekali di entry, semua consumer di bawah aman dari config legacy.
+  const config = normalizeConfig(rawConfig);
   const sourceType = config.sourceType ?? "web";
 
   if (sourceType === "api" && config.mode === "css") {
